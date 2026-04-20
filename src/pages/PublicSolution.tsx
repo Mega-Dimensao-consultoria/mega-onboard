@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { BrandHeader } from "@/components/BrandHeader";
 import type { Brand } from "@/hooks/useBrand";
 
@@ -62,6 +63,14 @@ export default function PublicSolution() {
   }
 
   const { lead, brand } = data;
+  const safeHtml = useMemo(
+    () =>
+      DOMPurify.sanitize(lead.technical_solution || "", {
+        FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
+        FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "formaction"],
+      }),
+    [lead.technical_solution],
+  );
   return (
     <div className="min-h-screen flex flex-col bg-secondary/20">
       <BrandHeader />
@@ -85,7 +94,7 @@ export default function PublicSolution() {
             prose-headings:font-display prose-headings:text-foreground
             prose-p:text-foreground prose-strong:text-foreground prose-a:text-primary
             prose-li:text-foreground"
-          dangerouslySetInnerHTML={{ __html: lead.technical_solution || "" }}
+          dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
       </main>
     </div>
