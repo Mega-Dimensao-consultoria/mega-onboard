@@ -113,6 +113,17 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (action === "reorder-questions") {
+      const items = (body.items as { id: string; step: number; order_index: number }[]) || [];
+      for (const it of items) {
+        const { error } = await supabase.from("form_questions")
+          .update({ step: it.step, order_index: it.order_index, updated_at: new Date().toISOString() })
+          .eq("id", it.id);
+        if (error) throw error;
+      }
+      return json({ ok: true });
+    }
+
     if (action === "save-brand") {
       const b = body.brand;
       const { data: existing } = await supabase.from("brand_settings").select("id").limit(1).maybeSingle();
