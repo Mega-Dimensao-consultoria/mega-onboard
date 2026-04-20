@@ -9,24 +9,42 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const CONSULTANT_PASSWORD = Deno.env.get("CONSULTANT_PASSWORD") || "";
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
-function makeToken(): string {
-  // Simple HMAC-style token: sign timestamp with password
-  const ts = Date.now().toString();
-  const payload = btoa(`${ts}:${CONSULTANT_PASSWORD}`);
-  return payload;
+// --- HMAC token helpers (sign timestamp; password never embedded) ---
+async function hmacKey(): Promise<CryptoKey> {
+  return await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(CONSULTANT_PASSWORD),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"],
+  );
 }
 
-function verifyToken(token: string | null): boolean {
+function b64url(bytes: ArrayBuffer): string {
+  const b = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+  return b.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function makeToken(): Promise<string> {
+  const ts = Date.now().toString();
+  const key = await hmacKey();
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(ts));
+  return `${ts}.${b64url(sig)}`;
+}
+
+async function verifyToken(token: string | null): Promise<boolean> {
   if (!token || !CONSULTANT_PASSWORD) return false;
   try {
-    const decoded = atob(token);
-    const [tsStr, pwd] = decoded.split(":");
-    if (pwd !== CONSULTANT_PASSWORD) return false;
+    const [tsStr, sig] = token.split(".");
+    if (!tsStr || !sig) return false;
     const ts = parseInt(tsStr, 10);
-    // 7 day expiry
-    if (Date.now() - ts > 7 * 24 * 60 * 60 * 1000) return false;
-    return true;
+    if (!Number.isFinite(ts)) return false;
+    if (Date.now() - ts > TOKEN_TTL_MS) return false;
+    const key = await hmacKey();
+    const expected = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(tsStr));
+    return b64url(expected) === sig;
   } catch {
     return false;
   }
@@ -37,7 +55,6 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
   const url = new URL(req.url);
-  // last path segment is the action
   const action = url.pathname.split("/").filter(Boolean).pop();
 
   const json = (data: unknown, status = 200) =>
@@ -47,21 +64,42 @@ Deno.serve(async (req) => {
     });
 
   try {
-    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    // upload-logo uses multipart, handle separately
+    const isMultipart = (req.headers.get("content-type") || "").includes("multipart/form-data");
+    const body: Record<string, unknown> = !isMultipart && req.method === "POST"
+      ? await req.json().catch(() => ({}))
+      : {};
 
     if (action === "login") {
       const pw = String(body.password ?? "");
       if (!CONSULTANT_PASSWORD) return json({ error: "Senha não configurada" }, 500);
       if (pw !== CONSULTANT_PASSWORD) return json({ error: "Senha incorreta" }, 401);
-      return json({ token: makeToken() });
+      return json({ token: await makeToken() });
     }
 
     // All other actions require token
     const token = req.headers.get("x-consultor-token");
-    if (!verifyToken(token)) return json({ error: "Não autorizado" }, 401);
+    if (!(await verifyToken(token))) return json({ error: "Não autorizado" }, 401);
 
-    if (action === "verify") {
-      return json({ ok: true });
+    if (action === "verify") return json({ ok: true });
+
+    if (action === "upload-logo") {
+      const form = await req.formData();
+      const file = form.get("file");
+      if (!(file instanceof File)) return json({ error: "Arquivo ausente" }, 400);
+      if (file.size > 5 * 1024 * 1024) return json({ error: "Arquivo muito grande (máx 5MB)" }, 400);
+      if (!file.type.startsWith("image/")) return json({ error: "Apenas imagens" }, 400);
+      const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `logo-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("brand-assets")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) {
+        console.error("upload error", upErr);
+        return json({ error: "Falha no upload" }, 500);
+      }
+      const { data } = supabase.storage.from("brand-assets").getPublicUrl(path);
+      return json({ url: data.publicUrl });
     }
 
     if (action === "leads") {
@@ -84,7 +122,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "save-question") {
-      const q = body.question;
+      const q = body.question as Record<string, unknown> & { id?: string };
       if (q.id) {
         const { error } = await supabase.from("form_questions").update({
           step: q.step, step_title: q.step_title, order_index: q.order_index,
@@ -125,7 +163,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "save-brand") {
-      const b = body.brand;
+      const b = body.brand as Record<string, unknown>;
       const { data: existing } = await supabase.from("brand_settings").select("id").limit(1).maybeSingle();
       if (existing) {
         const { error } = await supabase.from("brand_settings").update({
@@ -144,7 +182,7 @@ Deno.serve(async (req) => {
 
     return json({ error: "Ação desconhecida" }, 404);
   } catch (e) {
-    console.error(e);
-    return json({ error: e instanceof Error ? e.message : "Erro" }, 500);
+    console.error("consultor-api error:", e);
+    return json({ error: "Erro interno" }, 500);
   }
 });
