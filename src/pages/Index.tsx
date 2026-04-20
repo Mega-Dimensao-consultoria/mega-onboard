@@ -130,7 +130,10 @@ const Index = () => {
 
       setDone(true);
     } catch (e) {
-      toast({ title: "Erro ao enviar", description: e instanceof Error ? e.message : "", variant: "destructive" });
+      console.error("Erro ao enviar formulário:", e);
+      const description =
+        e instanceof Error ? e.message : typeof e === "object" ? JSON.stringify(e) : String(e);
+      toast({ title: "Erro ao enviar", description, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
