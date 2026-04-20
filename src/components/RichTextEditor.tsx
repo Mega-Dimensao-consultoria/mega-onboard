@@ -72,6 +72,9 @@ function Toolbar({ editor }: { editor: Editor }) {
 }
 
 export function RichTextEditor({ value, onChange, editable = true, placeholder }: Props) {
+  const [mode, setMode] = useState<"visual" | "html">("visual");
+  const [htmlDraft, setHtmlDraft] = useState(value || "");
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -99,18 +102,77 @@ export function RichTextEditor({ value, onChange, editable = true, placeholder }
     if (value !== editor.getHTML()) {
       editor.commands.setContent(value || "", { emitUpdate: false });
     }
+    setHtmlDraft(value || "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, editor]);
 
   if (!editor) return null;
 
+  const switchToVisual = () => {
+    editor.commands.setContent(htmlDraft || "", { emitUpdate: false });
+    onChange(htmlDraft || "");
+    setMode("visual");
+  };
+
+  const switchToHtml = () => {
+    setHtmlDraft(editor.getHTML());
+    setMode("html");
+  };
+
   return (
     <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
-      {editable && <Toolbar editor={editor} />}
+      {editable && (
+        <div className="flex items-stretch justify-between border-b border-border/60 bg-secondary/30">
+          <div className="flex-1 min-w-0">
+            {mode === "visual" ? (
+              <Toolbar editor={editor} />
+            ) : (
+              <div className="text-xs text-muted-foreground px-3 py-2.5">
+                Modo HTML — edite o código diretamente. Ao voltar para visual, o conteúdo é aplicado.
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1 px-2 border-l border-border/60">
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "visual" ? "secondary" : "ghost"}
+              className="h-8"
+              onClick={() => mode === "html" && switchToVisual()}
+              title="Editor visual"
+            >
+              <Eye className="h-4 w-4 mr-1" /> Visual
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "html" ? "secondary" : "ghost"}
+              className="h-8"
+              onClick={() => mode === "visual" && switchToHtml()}
+              title="Editor HTML"
+            >
+              <Code2 className="h-4 w-4 mr-1" /> HTML
+            </Button>
+          </div>
+        </div>
+      )}
       {!editable && placeholder && !value && (
         <div className="p-4 text-sm text-muted-foreground">{placeholder}</div>
       )}
-      <EditorContent editor={editor} />
+      {mode === "visual" || !editable ? (
+        <EditorContent editor={editor} />
+      ) : (
+        <Textarea
+          value={htmlDraft}
+          onChange={(e) => {
+            setHtmlDraft(e.target.value);
+            onChange(e.target.value);
+          }}
+          className="min-h-[260px] rounded-none border-0 font-mono text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
+          placeholder="<p>Seu HTML aqui...</p>"
+          spellCheck={false}
+        />
+      )}
     </div>
   );
 }
