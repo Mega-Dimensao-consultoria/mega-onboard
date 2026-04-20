@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { generateBRD } from "@/lib/pdf";
 import type { Brand } from "@/hooks/useBrand";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { FileText, Inbox, Save, Download, MessageCircle, Eye, Loader2 } from "lucide-react";
+import { FileText, Inbox, Save, Download, MessageCircle, Eye, Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Lead = {
   id: string; contact_name: string | null; contact_email: string | null;
@@ -37,6 +41,21 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
   const [solution, setSolution] = useState("");
   const [savingSolution, setSavingSolution] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const deleteLead = async (lead: Lead) => {
+    setDeletingId(lead.id);
+    try {
+      await consultor.call("delete-lead", { id: lead.id });
+      toast({ title: "Lead excluído" });
+      if (active?.id === lead.id) setActive(null);
+      setLeads((prev) => prev.filter((l) => l.id !== lead.id));
+    } catch (e) {
+      toast({ title: "Erro ao excluir", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const refreshLeads = async () => {
     const d = await consultor.call("leads");
@@ -165,7 +184,42 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
                     : <span className="text-muted-foreground text-xs">—</span>}
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <Button size="sm" variant="ghost" onClick={() => openLead(l)}>Ver</Button>
+                  <div className="flex justify-end gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => openLead(l)}>Ver</Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={deletingId === l.id}
+                          aria-label="Excluir lead"
+                        >
+                          {deletingId === l.id
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Trash2 className="h-4 w-4" />}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir este lead?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação é permanente. Todos os dados do lead {l.contact_name || "(sem nome)"},
+                            incluindo respostas do briefing, solução técnica e PDFs gerados, serão removidos.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteLead(l)}
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </td>
               </tr>
             ))}
