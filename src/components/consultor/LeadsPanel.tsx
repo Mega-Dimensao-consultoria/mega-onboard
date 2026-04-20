@@ -184,7 +184,42 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
                     : <span className="text-muted-foreground text-xs">—</span>}
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <Button size="sm" variant="ghost" onClick={() => openLead(l)}>Ver</Button>
+                  <div className="flex justify-end gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => openLead(l)}>Ver</Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={deletingId === l.id}
+                          aria-label="Excluir lead"
+                        >
+                          {deletingId === l.id
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Trash2 className="h-4 w-4" />}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir este lead?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação é permanente. Todos os dados do lead {l.contact_name || "(sem nome)"},
+                            incluindo respostas do briefing, solução técnica e PDFs gerados, serão removidos.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteLead(l)}
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </td>
               </tr>
             ))}
