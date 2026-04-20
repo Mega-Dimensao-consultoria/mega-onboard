@@ -5,12 +5,13 @@ import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Bold, Italic, Underline as UIcon, Strikethrough, List, ListOrdered,
   Heading1, Heading2, Heading3, Quote, Undo2, Redo2,
-  AlignLeft, AlignCenter, AlignRight, Link2, Link2Off, Code,
+  AlignLeft, AlignCenter, AlignRight, Link2, Link2Off, Code, Code2, Eye,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   value: string;
