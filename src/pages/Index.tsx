@@ -284,12 +284,14 @@ function renderField(
     );
   }
   if (q.field_type === "masked") {
+    // Convert legacy "9" digit-placeholders to IMask's "0" definition so users can type real numbers
+    const mask = (q.mask || "").replace(/9/g, "0");
     return (
       <IMaskInput
-        mask={q.mask || ""}
+        mask={mask}
         value={(v as string) || ""}
         onAccept={(val: string) => setAnswer(q.id, val)}
-        placeholder={q.mask || ""}
+        placeholder={mask}
         className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
     );
