@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { generateBRD } from "@/lib/pdf";
 import type { Brand } from "@/hooks/useBrand";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { FileText, Inbox, Save, Download, MessageCircle, Eye, Loader2 } from "lucide-react";
+import { FileText, Inbox, Save, Download, MessageCircle, Eye, Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Lead = {
   id: string; contact_name: string | null; contact_email: string | null;
