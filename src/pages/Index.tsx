@@ -105,28 +105,34 @@ const Index = () => {
       const nameId = findByLabel("nome completo") || findByLabel("razão social");
       const solId = findByLabel("qual solução");
 
+      // Generate the lead id client-side so we don't need SELECT permission after insert
+      const leadId = crypto.randomUUID();
       const lead = {
+        id: leadId,
         contact_name: nameId ? (answers[nameId] as string) : null,
         contact_email: emailId ? (answers[emailId] as string) : null,
         contact_whatsapp: waId ? (answers[waId] as string) : null,
         solution_type: solId ? (answers[solId] as string) : null,
       };
 
-      const { data: leadRow, error } = await supabase.from("leads").insert(lead).select().single();
-      if (error) throw error;
+      const { error: leadErr } = await supabase.from("leads").insert(lead);
+      if (leadErr) throw leadErr;
 
       const visibleAll = questions.filter(isVisible);
       const rows = visibleAll
         .filter((q) => answers[q.id] !== undefined)
         .map((q) => ({
-          lead_id: leadRow.id,
+          lead_id: leadId,
           question_id: q.id,
           question_label: q.label,
           answer: Array.isArray(answers[q.id])
             ? (answers[q.id] as string[]).join(", ")
             : String(answers[q.id]),
         }));
-      if (rows.length) await supabase.from("lead_answers").insert(rows);
+      if (rows.length) {
+        const { error: ansErr } = await supabase.from("lead_answers").insert(rows);
+        if (ansErr) throw ansErr;
+      }
 
       setDone(true);
     } catch (e) {
