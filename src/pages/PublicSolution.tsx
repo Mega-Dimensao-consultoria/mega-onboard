@@ -48,6 +48,15 @@ export default function PublicSolution() {
     document.title = "Solução Técnica · Briefing";
   }, [data]);
 
+  const safeHtml = useMemo(
+    () =>
+      DOMPurify.sanitize(data?.lead?.technical_solution || "", {
+        FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
+        FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "formaction"],
+      }),
+    [data?.lead?.technical_solution],
+  );
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando…</div>;
   }
@@ -63,14 +72,6 @@ export default function PublicSolution() {
   }
 
   const { lead, brand } = data;
-  const safeHtml = useMemo(
-    () =>
-      DOMPurify.sanitize(lead.technical_solution || "", {
-        FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
-        FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "formaction"],
-      }),
-    [lead.technical_solution],
-  );
   return (
     <div className="min-h-screen flex flex-col bg-secondary/20">
       <BrandHeader />
