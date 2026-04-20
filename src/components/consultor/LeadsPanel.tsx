@@ -41,6 +41,21 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
   const [solution, setSolution] = useState("");
   const [savingSolution, setSavingSolution] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const deleteLead = async (lead: Lead) => {
+    setDeletingId(lead.id);
+    try {
+      await consultor.call("delete-lead", { id: lead.id });
+      toast({ title: "Lead excluído" });
+      if (active?.id === lead.id) setActive(null);
+      setLeads((prev) => prev.filter((l) => l.id !== lead.id));
+    } catch (e) {
+      toast({ title: "Erro ao excluir", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const refreshLeads = async () => {
     const d = await consultor.call("leads");
