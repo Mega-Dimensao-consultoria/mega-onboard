@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { consultor } from "@/lib/api";
+
+const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/consultor-api`;
 
 export type Brand = {
   id?: string;
@@ -13,26 +15,60 @@ export type Brand = {
   logo_url?: string | null;
 };
 
+async function fetchPublicBrand(): Promise<Brand | null> {
+  try {
+    const res = await fetch(`${FN_URL}/public-brand`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: "{}",
+    });
+    const j = await res.json();
+    return (j?.brand ?? null) as Brand | null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAuthenticatedBrand(): Promise<Brand | null> {
+  try {
+    const data = await consultor.call("brand-detail");
+    return (data?.brand ?? null) as Brand | null;
+  } catch {
+    return null;
+  }
+}
+
 export function useBrand() {
   const [brand, setBrand] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const load = async () => {
+    const hasToken = !!consultor.getToken();
+    const data = hasToken ? await fetchAuthenticatedBrand() : await fetchPublicBrand();
+    setBrand(data);
+    setLoading(false);
+    if (data?.primary_color) {
+      document.documentElement.style.setProperty("--primary", data.primary_color);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
-    supabase.from("brand_settings").select("*").limit(1).maybeSingle().then(({ data }) => {
+    (async () => {
+      const hasToken = !!consultor.getToken();
+      const data = hasToken ? await fetchAuthenticatedBrand() : await fetchPublicBrand();
       if (!mounted) return;
-      setBrand(data as Brand | null);
+      setBrand(data);
       setLoading(false);
       if (data?.primary_color) {
         document.documentElement.style.setProperty("--primary", data.primary_color);
       }
-    });
+    })();
     return () => { mounted = false; };
   }, []);
 
-  return { brand, loading, refresh: async () => {
-    const { data } = await supabase.from("brand_settings").select("*").limit(1).maybeSingle();
-    setBrand(data as Brand | null);
-    if (data?.primary_color) document.documentElement.style.setProperty("--primary", data.primary_color);
-  }};
+  return { brand, loading, refresh: load };
 }

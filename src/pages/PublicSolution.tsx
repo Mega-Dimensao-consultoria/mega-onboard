@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { BrandHeader } from "@/components/BrandHeader";
 import type { Brand } from "@/hooks/useBrand";
 
@@ -47,6 +48,15 @@ export default function PublicSolution() {
     document.title = "Solução Técnica · Briefing";
   }, [data]);
 
+  const safeHtml = useMemo(
+    () =>
+      DOMPurify.sanitize(data?.lead?.technical_solution || "", {
+        FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
+        FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "formaction"],
+      }),
+    [data?.lead?.technical_solution],
+  );
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando…</div>;
   }
@@ -85,7 +95,7 @@ export default function PublicSolution() {
             prose-headings:font-display prose-headings:text-foreground
             prose-p:text-foreground prose-strong:text-foreground prose-a:text-primary
             prose-li:text-foreground"
-          dangerouslySetInnerHTML={{ __html: lead.technical_solution || "" }}
+          dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
       </main>
     </div>

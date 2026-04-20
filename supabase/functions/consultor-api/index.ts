@@ -77,6 +77,16 @@ Deno.serve(async (req) => {
       return json({ token: await makeToken() });
     }
 
+    // Public action: returns ONLY safe public branding fields (no CNPJ, email, phone, address, razao_social)
+    if (action === "public-brand") {
+      const { data: brand } = await supabase
+        .from("brand_settings")
+        .select("nome_fantasia, logo_url, primary_color")
+        .limit(1)
+        .maybeSingle();
+      return json({ brand });
+    }
+
     // Public action: read-only technical solution by lead id (for client link)
     if (action === "public-solution") {
       const id = String(body.id ?? "");
@@ -87,7 +97,11 @@ Deno.serve(async (req) => {
         .eq("id", id)
         .maybeSingle();
       if (!lead || !lead.technical_solution) return json({ error: "Solução não disponível" }, 404);
-      const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).maybeSingle();
+      const { data: brand } = await supabase
+        .from("brand_settings")
+        .select("nome_fantasia, logo_url, primary_color")
+        .limit(1)
+        .maybeSingle();
       return json({ lead, brand });
     }
 
@@ -96,6 +110,11 @@ Deno.serve(async (req) => {
     if (!(await verifyToken(token))) return json({ error: "Não autorizado" }, 401);
 
     if (action === "verify") return json({ ok: true });
+
+    if (action === "brand-detail") {
+      const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).maybeSingle();
+      return json({ brand });
+    }
 
     if (action === "upload-logo") {
       const form = await req.formData();
