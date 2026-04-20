@@ -39,6 +39,23 @@ export const consultor = {
     return data.url as string;
   },
 
+  async uploadBriefingPdf(leadId: string, blob: Blob, filename: string): Promise<string> {
+    const fd = new FormData();
+    fd.append("file", new File([blob], filename, { type: "application/pdf" }));
+    fd.append("lead_id", leadId);
+    const res = await fetch(`${FN_URL}/upload-briefing-pdf`, {
+      method: "POST",
+      headers: {
+        "x-consultor-token": consultor.getToken() || "",
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erro");
+    return data.url as string;
+  },
+
   async login(password: string) {
     const data = await this.call("login", { password });
     this.setToken(data.token);
