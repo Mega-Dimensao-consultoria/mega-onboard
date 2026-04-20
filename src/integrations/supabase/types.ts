@@ -14,7 +14,176 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      brand_settings: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          logo_url: string | null
+          nome_fantasia: string | null
+          primary_color: string | null
+          razao_social: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          logo_url?: string | null
+          nome_fantasia?: string | null
+          primary_color?: string | null
+          razao_social?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          logo_url?: string | null
+          nome_fantasia?: string | null
+          primary_color?: string | null
+          razao_social?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      form_questions: {
+        Row: {
+          created_at: string
+          depends_on: string | null
+          depends_value: string | null
+          field_type: string
+          id: string
+          label: string
+          mask: string | null
+          options: Json | null
+          order_index: number
+          required: boolean | null
+          step: number
+          step_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          depends_on?: string | null
+          depends_value?: string | null
+          field_type: string
+          id?: string
+          label: string
+          mask?: string | null
+          options?: Json | null
+          order_index?: number
+          required?: boolean | null
+          step?: number
+          step_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          depends_on?: string | null
+          depends_value?: string | null
+          field_type?: string
+          id?: string
+          label?: string
+          mask?: string | null
+          options?: Json | null
+          order_index?: number
+          required?: boolean | null
+          step?: number
+          step_title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_questions_depends_on_fkey"
+            columns: ["depends_on"]
+            isOneToOne: false
+            referencedRelation: "form_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_answers: {
+        Row: {
+          answer: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          question_id: string
+          question_label: string
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          question_id: string
+          question_label: string
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          question_id?: string
+          question_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_answers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "form_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          contact_email: string | null
+          contact_name: string | null
+          contact_whatsapp: string | null
+          created_at: string
+          id: string
+          solution_type: string | null
+          status: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_whatsapp?: string | null
+          created_at?: string
+          id?: string
+          solution_type?: string | null
+          status?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_whatsapp?: string | null
+          created_at?: string
+          id?: string
+          solution_type?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
