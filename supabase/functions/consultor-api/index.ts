@@ -156,6 +156,25 @@ Deno.serve(async (req) => {
       return json({ leads });
     }
 
+    if (action === "delete-lead") {
+      const id = String(body.id ?? "");
+      if (!id) return json({ error: "id ausente" }, 400);
+      // Remove arquivos do briefing no storage (pasta com o id do lead)
+      try {
+        const { data: files } = await supabase.storage.from("briefings").list(id);
+        if (files && files.length > 0) {
+          await supabase.storage.from("briefings").remove(files.map((f) => `${id}/${f.name}`));
+        }
+      } catch (e) {
+        console.error("erro ao limpar storage do lead", e);
+      }
+      const { error: ansErr } = await supabase.from("lead_answers").delete().eq("lead_id", id);
+      if (ansErr) throw ansErr;
+      const { error } = await supabase.from("leads").delete().eq("id", id);
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
     if (action === "lead-detail") {
       const id = String(body.id ?? "");
       const { data: lead } = await supabase.from("leads").select("*").eq("id", id).maybeSingle();
