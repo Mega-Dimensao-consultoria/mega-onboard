@@ -39,11 +39,13 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
   };
 
   const onLogo = async (file: File) => {
-    const path = `logo-${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("brand-assets").upload(path, file, { upsert: true });
-    if (error) return toast({ title: "Erro upload", description: error.message, variant: "destructive" });
-    const { data } = supabase.storage.from("brand-assets").getPublicUrl(path);
-    setB((p) => ({ ...p, logo_url: data.publicUrl }));
+    try {
+      const url = await consultor.uploadLogo(file);
+      setB((p) => ({ ...p, logo_url: url }));
+      toast({ title: "Logo enviada" });
+    } catch (e) {
+      toast({ title: "Erro upload", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    }
   };
 
   const save = async () => {
