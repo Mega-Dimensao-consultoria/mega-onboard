@@ -163,6 +163,8 @@ export type Database = {
           id: string
           solution_type: string | null
           status: string | null
+          technical_solution: string | null
+          technical_solution_updated_at: string | null
         }
         Insert: {
           contact_email?: string | null
@@ -172,6 +174,8 @@ export type Database = {
           id?: string
           solution_type?: string | null
           status?: string | null
+          technical_solution?: string | null
+          technical_solution_updated_at?: string | null
         }
         Update: {
           contact_email?: string | null
@@ -181,6 +185,8 @@ export type Database = {
           id?: string
           solution_type?: string | null
           status?: string | null
+          technical_solution?: string | null
+          technical_solution_updated_at?: string | null
         }
         Relationships: []
       }

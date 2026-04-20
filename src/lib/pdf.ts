@@ -8,18 +8,37 @@ type Lead = {
   contact_whatsapp: string | null;
   solution_type: string | null;
   created_at: string;
+  technical_solution?: string | null;
 };
 
 type Answer = { question_label: string; answer: string | null };
 
-export function generateBRD(brand: Brand | null, lead: Lead, answers: Answer[]) {
+function htmlToPlain(html: string): string {
+  return html
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export function generateBRD(
+  brand: Brand | null,
+  lead: Lead,
+  answers: Answer[],
+  opts: { returnBlob?: boolean } = {},
+): { blob: Blob | null; filename: string } {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const M = 48;
   let y = M;
 
-  // Header band
   doc.setFillColor(20, 35, 80);
   doc.rect(0, 0, W, 90, "F");
   doc.setTextColor(255, 255, 255);
@@ -50,7 +69,6 @@ export function generateBRD(brand: Brand | null, lead: Lead, answers: Answer[]) 
   doc.text(`Gerado em ${new Date().toLocaleString("pt-BR")}`, M, y);
   y += 24;
 
-  // Lead info
   doc.setDrawColor(220);
   doc.setFillColor(245, 247, 252);
   doc.roundedRect(M, y, W - M * 2, 80, 6, 6, "F");
@@ -70,7 +88,6 @@ export function generateBRD(brand: Brand | null, lead: Lead, answers: Answer[]) 
   info.forEach((l) => { doc.text(l, M + 14, iy); iy += 14; });
   y += 100;
 
-  // Answers
   doc.setTextColor(20, 35, 80);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
@@ -95,7 +112,30 @@ export function generateBRD(brand: Brand | null, lead: Lead, answers: Answer[]) 
     y += answerLines.length * 13 + 12;
   }
 
-  // Footer page numbers
+  if (lead.technical_solution && lead.technical_solution.trim()) {
+    const text = htmlToPlain(lead.technical_solution);
+    if (text) {
+      doc.addPage();
+      y = M;
+      doc.setTextColor(20, 35, 80);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Solução Técnica Apresentada", M, y);
+      y += 22;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(40);
+      const paragraphs = text.split(/\n+/);
+      for (const p of paragraphs) {
+        if (!p.trim()) continue;
+        const lines = doc.splitTextToSize(p, W - M * 2);
+        if (y + lines.length * 13 > H - M) { doc.addPage(); y = M; }
+        doc.text(lines, M, y);
+        y += lines.length * 13 + 6;
+      }
+    }
+  }
+
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -105,5 +145,10 @@ export function generateBRD(brand: Brand | null, lead: Lead, answers: Answer[]) 
     doc.text(`Página ${i}/${pageCount}`, W - M, H - 20, { align: "right" });
   }
 
-  doc.save(`BRD-${(lead.contact_name || lead.id).replace(/\s+/g, "_")}.pdf`);
+  const filename = `BRD-${(lead.contact_name || lead.id).replace(/\s+/g, "_")}.pdf`;
+  if (opts.returnBlob) {
+    return { blob: doc.output("blob") as Blob, filename };
+  }
+  doc.save(filename);
+  return { blob: null, filename };
 }

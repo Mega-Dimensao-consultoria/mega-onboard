@@ -77,6 +77,20 @@ Deno.serve(async (req) => {
       return json({ token: await makeToken() });
     }
 
+    // Public action: read-only technical solution by lead id (for client link)
+    if (action === "public-solution") {
+      const id = String(body.id ?? "");
+      if (!id) return json({ error: "id ausente" }, 400);
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("id, contact_name, solution_type, technical_solution, technical_solution_updated_at, created_at")
+        .eq("id", id)
+        .maybeSingle();
+      if (!lead || !lead.technical_solution) return json({ error: "Solução não disponível" }, 404);
+      const { data: brand } = await supabase.from("brand_settings").select("*").limit(1).maybeSingle();
+      return json({ lead, brand });
+    }
+
     // All other actions require token
     const token = req.headers.get("x-consultor-token");
     if (!(await verifyToken(token))) return json({ error: "Não autorizado" }, 401);
@@ -100,6 +114,37 @@ Deno.serve(async (req) => {
       }
       const { data } = supabase.storage.from("brand-assets").getPublicUrl(path);
       return json({ url: data.publicUrl });
+    }
+
+    if (action === "upload-briefing-pdf") {
+      const form = await req.formData();
+      const file = form.get("file");
+      const leadId = String(form.get("lead_id") ?? "");
+      if (!(file instanceof File)) return json({ error: "Arquivo ausente" }, 400);
+      if (!leadId) return json({ error: "lead_id ausente" }, 400);
+      if (file.size > 10 * 1024 * 1024) return json({ error: "PDF muito grande (máx 10MB)" }, 400);
+      const path = `${leadId}/BRD-${Date.now()}.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from("briefings")
+        .upload(path, file, { upsert: true, contentType: "application/pdf" });
+      if (upErr) {
+        console.error("upload pdf error", upErr);
+        return json({ error: "Falha no upload do PDF" }, 500);
+      }
+      const { data } = supabase.storage.from("briefings").getPublicUrl(path);
+      return json({ url: data.publicUrl });
+    }
+
+    if (action === "update-solution") {
+      const id = String(body.id ?? "");
+      const html = typeof body.technical_solution === "string" ? body.technical_solution : "";
+      if (!id) return json({ error: "id ausente" }, 400);
+      const { error } = await supabase.from("leads").update({
+        technical_solution: html,
+        technical_solution_updated_at: new Date().toISOString(),
+      }).eq("id", id);
+      if (error) throw error;
+      return json({ ok: true });
     }
 
     if (action === "leads") {

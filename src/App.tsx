@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Consultor from "./pages/Consultor.tsx";
 import ConsultorLogin from "./pages/ConsultorLogin.tsx";
+import PublicSolution from "./pages/PublicSolution.tsx";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/consultor" element={<Consultor />} />
           <Route path="/consultor/login" element={<ConsultorLogin />} />
+          <Route path="/solucao/:id" element={<PublicSolution />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
