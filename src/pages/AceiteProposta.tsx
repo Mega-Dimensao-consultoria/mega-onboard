@@ -151,7 +151,7 @@ export default function AceiteProposta() {
       // 5. audit
       await supabase.from("audit_log").insert([{
         actor_user_id: userId,
-        action: "accept_proposal",
+        action: "proposal_accepted",
         target_type: "lead",
         target_id: id,
         metadata: { doc_type: docType },
