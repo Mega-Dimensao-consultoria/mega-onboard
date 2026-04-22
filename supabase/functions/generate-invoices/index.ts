@@ -33,17 +33,31 @@ function diffDays(a: Date, b: Date) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const cronSecret = Deno.env.get("CRON_SECRET");
-  const provided = req.headers.get("x-cron-secret");
-  if (cronSecret && provided !== cronSecret) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(url, key);
+
+  // Auth: aceitamos tanto CRON_SECRET (env) quanto o segredo do vault
+  // 'invoice_cron_secret'. Isso garante que o pg_cron — que lê do vault —
+  // funcione mesmo se o env CRON_SECRET não estiver sincronizado.
+  const provided = req.headers.get("x-cron-secret") ?? "";
+  const envSecret = Deno.env.get("CRON_SECRET") ?? "";
+  let authorized = envSecret.length > 0 && provided === envSecret;
+  if (!authorized && provided.length > 0) {
+    const { data: vaultRow } = await supabase
+      .schema("vault" as any)
+      .from("decrypted_secrets")
+      .select("decrypted_secret")
+      .eq("name", "invoice_cron_secret")
+      .maybeSingle();
+    const vaultSecret = (vaultRow as any)?.decrypted_secret as string | undefined;
+    if (vaultSecret && provided === vaultSecret) authorized = true;
+  }
+  if (!authorized) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(url, key);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
