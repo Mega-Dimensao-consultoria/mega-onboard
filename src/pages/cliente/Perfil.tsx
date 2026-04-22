@@ -13,7 +13,10 @@ import {
   maskCEP, maskCNPJ, maskCPF, maskPhone, onlyDigits,
   isValidCPF, isValidCNPJ, fetchCep,
 } from "@/lib/masks";
-import { Loader2 } from "lucide-react";
+import { Loader2, Receipt } from "lucide-react";
+import { Link } from "react-router-dom";
+import { fmtMoney, fmtDate } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Nome muito curto").max(120),
@@ -55,6 +58,7 @@ export default function Perfil() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [paidInvoices, setPaidInvoices] = useState<{ id: string; total_cents: number; paid_at: string | null; payment_method: string | null }[]>([]);
 
   useEffect(() => {
     if (!clientId) return;
@@ -82,6 +86,13 @@ export default function Perfil() {
         });
         setLoading(false);
       });
+    supabase.from("invoices")
+      .select("id,total_cents,paid_at,payment_method")
+      .eq("client_id", clientId)
+      .eq("status", "paid")
+      .order("paid_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => setPaidInvoices(data || []));
   }, [clientId, user]);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((p) => ({ ...p, [k]: v }));
@@ -307,6 +318,35 @@ export default function Perfil() {
 
         <Button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</Button>
       </form>
+
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" /> Histórico de pagamentos</CardTitle></CardHeader>
+        <CardContent>
+          {paidInvoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum pagamento registrado ainda.</p>
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {paidInvoices.map((p) => (
+                <li key={p.id} className="py-3 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium">{fmtMoney(p.total_cents)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Paga em {fmtDate(p.paid_at)}
+                      {p.payment_method && ` · ${p.payment_method === "pix" ? "Pix" : p.payment_method === "paypal" ? "PayPal" : "Manual"}`}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default">Paga</Badge>
+                    <Button asChild size="sm" variant="ghost">
+                      <Link to={`/cliente/faturas/${p.id}`}>Ver</Link>
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
