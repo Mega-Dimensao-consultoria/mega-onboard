@@ -541,6 +541,63 @@ export type Database = {
           },
         ]
       }
+      lead_proposed_items: {
+        Row: {
+          billing_cycle: string
+          created_at: string
+          custom_name: string | null
+          custom_price_cents: number | null
+          id: string
+          lead_id: string
+          notes: string | null
+          product_id: string | null
+          quantity: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle: string
+          created_at?: string
+          custom_name?: string | null
+          custom_price_cents?: number | null
+          id?: string
+          lead_id: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string
+          custom_name?: string | null
+          custom_price_cents?: number | null
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_proposed_items_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_proposed_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           contact_email: string | null
