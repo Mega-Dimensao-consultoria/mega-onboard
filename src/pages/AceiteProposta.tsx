@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import { onlyDigits } from "@/lib/format";
+import { generateContractPdf, htmlToPlainText } from "@/lib/contractPdf";
 import { ArrowLeft, ArrowRight, Loader2, CheckCircle2, Search, Building2, User2 } from "lucide-react";
 
 type DocType = "cpf" | "cnpj";
@@ -23,6 +25,7 @@ export default function AceiteProposta() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { brand } = useBrand();
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -106,6 +109,13 @@ export default function AceiteProposta() {
 
     setBusy(true);
     try {
+      // Captura IP do cliente (best-effort)
+      let acceptedIp: string | null = null;
+      try {
+        const { data: ipData } = await supabase.functions.invoke("get-client-ip");
+        acceptedIp = (ipData as { ip?: string | null })?.ip ?? null;
+      } catch { /* silencioso */ }
+
       let userId = user?.id;
       // 1. cria conta (se ainda não logado)
       if (!userId) {
@@ -136,22 +146,31 @@ export default function AceiteProposta() {
       };
       await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
 
-      // 3. busca itens propostos pelo consultor
-      const { data: proposedItems } = await supabase
-        .from("lead_proposed_items")
-        .select("*")
-        .eq("lead_id", id!)
-        .order("sort_order");
+      // 3. busca itens propostos pelo consultor + solução técnica do lead
+      const [{ data: proposedItems }, { data: leadRow }] = await Promise.all([
+        supabase
+          .from("lead_proposed_items")
+          .select("*, products(name, price_cents)")
+          .eq("lead_id", id!)
+          .order("sort_order"),
+        supabase
+          .from("leads")
+          .select("technical_solution")
+          .eq("id", id!)
+          .maybeSingle(),
+      ]);
 
       const hasItems = (proposedItems?.length || 0) > 0;
+      const acceptedAt = new Date();
 
       // 4. cria contrato (active se já tem itens; pending_setup caso contrário)
       const { data: contractRow, error: cErr } = await supabase.from("contracts").insert([{
         client_id: userId,
         lead_id: id,
         status: hasItems ? "active" : "pending_setup",
-        accepted_at: new Date().toISOString(),
-        started_at: hasItems ? new Date().toISOString() : null,
+        accepted_at: acceptedAt.toISOString(),
+        accepted_ip: acceptedIp,
+        started_at: hasItems ? acceptedAt.toISOString() : null,
       }]).select("id").single();
       if (cErr && !cErr.message.includes("duplicate")) throw cErr;
 
@@ -159,7 +178,6 @@ export default function AceiteProposta() {
       if (hasItems && contractRow?.id) {
         const today = new Date();
         const itemsPayload = proposedItems!.map((p) => {
-          // calcula próximo billing baseado no ciclo
           let nextBilling: string | null = null;
           if (p.billing_cycle === "monthly") {
             const d = new Date(today); d.setMonth(d.getMonth() + 1);
@@ -187,19 +205,70 @@ export default function AceiteProposta() {
         await supabase.from("contract_items").insert(itemsPayload);
       }
 
-      // 6. atualiza lead → status proposta_aceita
+      // 6. gera PDF do contrato e faz upload (best-effort)
+      let contractPdfPath: string | null = null;
+      if (contractRow?.id) {
+        try {
+          const pdfBlob = generateContractPdf({
+            brand,
+            contractId: contractRow.id,
+            leadId: id!,
+            party: {
+              full_name: profilePayload.full_name || email,
+              doc_type: docType,
+              doc_number: profilePayload.doc_number!,
+              razao_social: profilePayload.razao_social,
+              nome_fantasia: profilePayload.nome_fantasia,
+              endereco: profilePayload.endereco,
+              email,
+              telefone: profilePayload.telefone,
+            },
+            items: (proposedItems || []).map((p: {
+              custom_name: string | null; custom_price_cents: number | null;
+              billing_cycle: string; quantity: number;
+              products?: { name: string; price_cents: number } | null;
+            }) => ({
+              custom_name: p.custom_name,
+              product_name: p.products?.name,
+              custom_price_cents: p.custom_price_cents,
+              product_price_cents: p.products?.price_cents,
+              billing_cycle: p.billing_cycle,
+              quantity: p.quantity,
+            })),
+            acceptedAt,
+            acceptedIp,
+            technicalSolutionPlain: leadRow?.technical_solution
+              ? htmlToPlainText(leadRow.technical_solution)
+              : null,
+          });
+          const path = `${userId}/${contractRow.id}.pdf`;
+          const { error: upErr } = await supabase.storage
+            .from("contracts")
+            .upload(path, pdfBlob, { upsert: true, contentType: "application/pdf" });
+          if (!upErr) {
+            contractPdfPath = path;
+            await supabase.from("contracts")
+              .update({ notes: `Contrato assinado eletronicamente. PDF: ${path}` })
+              .eq("id", contractRow.id);
+          }
+        } catch (pdfErr) {
+          console.warn("Falha ao gerar/upload PDF do contrato", pdfErr);
+        }
+      }
+
+      // 7. atualiza lead → status proposta_aceita
       await supabase.from("leads").update({ status: "proposta_aceita" }).eq("id", id);
 
-      // 5. audit
+      // 8. audit
       await supabase.from("audit_log").insert([{
         actor_user_id: userId,
         action: "proposal_accepted",
         target_type: "lead",
         target_id: id,
-        metadata: { doc_type: docType },
+        metadata: { doc_type: docType, accepted_ip: acceptedIp, contract_id: contractRow?.id, pdf_path: contractPdfPath },
       }]);
 
-      // 6. dispara email de confirmação (best-effort)
+      // 9. dispara email de confirmação (best-effort)
       const recipientName = docType === "cpf" ? fullName : (nomeFantasia || razaoSocial);
       supabase.functions.invoke("send-transactional-email", {
         body: {
