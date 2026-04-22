@@ -6,8 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
 import { fmtDate, fmtMoney, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
-import { Users, Search, Eye, Mail, Phone, MapPin, FileText, Receipt, Building2, User as UserIcon, Hash, Calendar } from "lucide-react";
+import { Users, Search, Eye, Mail, Phone, MapPin, FileText, Receipt, Building2, User as UserIcon, Hash, Calendar, Trash2 } from "lucide-react";
 import { startImpersonate } from "@/lib/impersonate";
 import { toast } from "@/hooks/use-toast";
 
