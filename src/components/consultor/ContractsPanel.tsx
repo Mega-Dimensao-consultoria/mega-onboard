@@ -61,7 +61,7 @@ export function ContractsPanel() {
 
   const updateStatus = async (status: string) => {
     if (!active) return;
-    const patch: Record<string, unknown> = { status };
+    const patch: { status: string; started_at?: string } = { status };
     if (status === "active" && !active.accepted_at) patch.started_at = new Date().toISOString();
     await supabase.from("contracts").update(patch).eq("id", active.id);
     toast({ title: "Status atualizado" });
