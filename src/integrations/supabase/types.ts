@@ -881,69 +881,7 @@ export type Database = {
       }
     }
     Views: {
-      brand_public: {
-        Row: {
-          client_login_cta: string | null
-          client_primary_color: string | null
-          created_at: string | null
-          footer_links: Json | null
-          footer_text: string | null
-          hero_badge: string | null
-          hero_cta_label: string | null
-          hero_subtitle: string | null
-          hero_title: string | null
-          id: string | null
-          logo_url: string | null
-          nome_fantasia: string | null
-          primary_color: string | null
-          razao_social: string | null
-          site_description: string | null
-          site_title: string | null
-          success_message: string | null
-          success_title: string | null
-        }
-        Insert: {
-          client_login_cta?: string | null
-          client_primary_color?: string | null
-          created_at?: string | null
-          footer_links?: Json | null
-          footer_text?: string | null
-          hero_badge?: string | null
-          hero_cta_label?: string | null
-          hero_subtitle?: string | null
-          hero_title?: string | null
-          id?: string | null
-          logo_url?: string | null
-          nome_fantasia?: string | null
-          primary_color?: string | null
-          razao_social?: string | null
-          site_description?: string | null
-          site_title?: string | null
-          success_message?: string | null
-          success_title?: string | null
-        }
-        Update: {
-          client_login_cta?: string | null
-          client_primary_color?: string | null
-          created_at?: string | null
-          footer_links?: Json | null
-          footer_text?: string | null
-          hero_badge?: string | null
-          hero_cta_label?: string | null
-          hero_subtitle?: string | null
-          hero_title?: string | null
-          id?: string | null
-          logo_url?: string | null
-          nome_fantasia?: string | null
-          primary_color?: string | null
-          razao_social?: string | null
-          site_description?: string | null
-          site_title?: string | null
-          success_message?: string | null
-          success_title?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       delete_email: {
@@ -953,6 +891,29 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_public_brand: {
+        Args: never
+        Returns: {
+          client_login_cta: string
+          client_primary_color: string
+          created_at: string
+          footer_links: Json
+          footer_text: string
+          hero_badge: string
+          hero_cta_label: string
+          hero_subtitle: string
+          hero_title: string
+          id: string
+          logo_url: string
+          nome_fantasia: string
+          primary_color: string
+          razao_social: string
+          site_description: string
+          site_title: string
+          success_message: string
+          success_title: string
+        }[]
       }
       get_public_proposal: {
         Args: { _lead_id: string }
