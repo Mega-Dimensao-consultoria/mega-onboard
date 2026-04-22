@@ -11,8 +11,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Sparkles, UserCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useBrand } from "@/hooks/useBrand";
+import { SiteFooter } from "@/components/SiteFooter";
 
 type Question = {
   id: string;
