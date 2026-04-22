@@ -182,7 +182,7 @@ export default function AceiteProposta() {
       // 5. copia os itens propostos para contract_items
       if (hasItems && contractRow?.id) {
         const today = new Date();
-        const itemsPayload = proposedItems!.map((p) => {
+        const itemsPayload = proposedItems.map((p) => {
           let nextBilling: string | null = null;
           if (p.billing_cycle === "monthly") {
             const d = new Date(today); d.setMonth(d.getMonth() + 1);
