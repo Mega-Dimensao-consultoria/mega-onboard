@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import { onlyDigits } from "@/lib/format";
+import { generateContractPdf, htmlToPlainText } from "@/lib/contractPdf";
 import { ArrowLeft, ArrowRight, Loader2, CheckCircle2, Search, Building2, User2 } from "lucide-react";
 
 type DocType = "cpf" | "cnpj";
@@ -23,6 +25,7 @@ export default function AceiteProposta() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { brand } = useBrand();
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
