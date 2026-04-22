@@ -892,6 +892,50 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_public_brand: {
+        Args: never
+        Returns: {
+          client_login_cta: string
+          client_primary_color: string
+          created_at: string
+          footer_links: Json
+          footer_text: string
+          hero_badge: string
+          hero_cta_label: string
+          hero_subtitle: string
+          hero_title: string
+          id: string
+          logo_url: string
+          nome_fantasia: string
+          primary_color: string
+          razao_social: string
+          site_description: string
+          site_title: string
+          success_message: string
+          success_title: string
+        }[]
+      }
+      get_public_proposal: {
+        Args: { _lead_id: string }
+        Returns: {
+          accepted: boolean
+          billing_cycle: string
+          contact_name: string
+          custom_name: string
+          custom_price_cents: number
+          item_id: string
+          lead_created_at: string
+          lead_id: string
+          product_id: string
+          product_name: string
+          product_price_cents: number
+          quantity: number
+          solution_type: string
+          sort_order: number
+          technical_solution: string
+          technical_solution_updated_at: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

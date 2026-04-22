@@ -146,19 +146,24 @@ export default function AceiteProposta() {
       };
       await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
 
-      // 3. busca itens propostos pelo consultor + solução técnica do lead
-      const [{ data: proposedItems }, { data: leadRow }] = await Promise.all([
-        supabase
-          .from("lead_proposed_items")
-          .select("*, products(name, price_cents)")
-          .eq("lead_id", id!)
-          .order("sort_order"),
-        supabase
-          .from("leads")
-          .select("technical_solution")
-          .eq("id", id!)
-          .maybeSingle(),
-      ]);
+      // 3. busca itens propostos pelo consultor + solução técnica do lead via RPC pública
+      const { data: proposalRows } = await supabase.rpc("get_public_proposal", { _lead_id: id! });
+      const allRows = (proposalRows as Array<Record<string, unknown>> | null) || [];
+      const proposedItems = allRows
+        .filter((r) => r.item_id)
+        .map((r) => ({
+          product_id: (r.product_id as string | null) ?? null,
+          custom_name: (r.custom_name as string | null) ?? null,
+          custom_price_cents: (r.custom_price_cents as number | null) ?? null,
+          billing_cycle: r.billing_cycle as string,
+          quantity: r.quantity as number,
+          products: r.product_name
+            ? { name: r.product_name as string, price_cents: r.product_price_cents as number }
+            : null,
+        }));
+      const leadRow = allRows[0]
+        ? { technical_solution: (allRows[0].technical_solution as string | null) ?? null }
+        : null;
 
       const hasItems = (proposedItems?.length || 0) > 0;
       const acceptedAt = new Date();
@@ -177,7 +182,7 @@ export default function AceiteProposta() {
       // 5. copia os itens propostos para contract_items
       if (hasItems && contractRow?.id) {
         const today = new Date();
-        const itemsPayload = proposedItems!.map((p) => {
+        const itemsPayload = proposedItems.map((p) => {
           let nextBilling: string | null = null;
           if (p.billing_cycle === "monthly") {
             const d = new Date(today); d.setMonth(d.getMonth() + 1);

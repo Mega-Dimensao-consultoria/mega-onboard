@@ -41,24 +41,35 @@ export default function PublicSolution() {
   useEffect(() => {
     if (!id) return;
     (async () => {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("id, contact_name, solution_type, technical_solution, technical_solution_updated_at, created_at, status")
-        .eq("id", id)
-        .maybeSingle();
-      if (error || !data) {
+      const { data, error } = await supabase.rpc("get_public_proposal", { _lead_id: id });
+      const rows = (data as Array<Record<string, unknown>> | null) || [];
+      if (error || rows.length === 0) {
         setError("Solução não disponível.");
       } else {
-        setLead(data as LeadPublic);
-        const [{ data: c }, { data: its }] = await Promise.all([
-          supabase.from("contracts").select("id").eq("lead_id", id).maybeSingle(),
-          supabase.from("lead_proposed_items")
-            .select("id, product_id, custom_name, custom_price_cents, billing_cycle, quantity, products(name, price_cents)")
-            .eq("lead_id", id)
-            .order("sort_order"),
-        ]);
-        setAccepted(!!c);
-        setItems((its as unknown as ProposedItem[]) || []);
+        const first = rows[0];
+        setLead({
+          id: first.lead_id as string,
+          contact_name: (first.contact_name as string | null) ?? null,
+          solution_type: (first.solution_type as string | null) ?? null,
+          technical_solution: (first.technical_solution as string | null) ?? null,
+          technical_solution_updated_at: (first.technical_solution_updated_at as string | null) ?? null,
+          created_at: first.lead_created_at as string,
+        });
+        setAccepted(!!first.accepted);
+        const its: ProposedItem[] = rows
+          .filter((r) => r.item_id)
+          .map((r) => ({
+            id: r.item_id as string,
+            product_id: (r.product_id as string | null) ?? null,
+            custom_name: (r.custom_name as string | null) ?? null,
+            custom_price_cents: (r.custom_price_cents as number | null) ?? null,
+            billing_cycle: r.billing_cycle as string,
+            quantity: r.quantity as number,
+            products: r.product_name
+              ? { name: r.product_name as string, price_cents: r.product_price_cents as number }
+              : null,
+          }));
+        setItems(its);
       }
       setLoading(false);
     })();
