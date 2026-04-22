@@ -668,40 +668,61 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
           created_at: string
           doc_number: string | null
           doc_type: string | null
           email: string | null
           endereco: string | null
+          estado: string | null
           full_name: string | null
           id: string
+          logradouro: string | null
           nome_fantasia: string | null
+          numero: string | null
           razao_social: string | null
           telefone: string | null
           updated_at: string
         }
         Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
           created_at?: string
           doc_number?: string | null
           doc_type?: string | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           full_name?: string | null
           id: string
+          logradouro?: string | null
           nome_fantasia?: string | null
+          numero?: string | null
           razao_social?: string | null
           telefone?: string | null
           updated_at?: string
         }
         Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
           created_at?: string
           doc_number?: string | null
           doc_type?: string | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           full_name?: string | null
           id?: string
+          logradouro?: string | null
           nome_fantasia?: string | null
+          numero?: string | null
           razao_social?: string | null
           telefone?: string | null
           updated_at?: string
