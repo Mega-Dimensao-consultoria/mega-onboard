@@ -20,6 +20,7 @@ import Faturas from "./pages/cliente/Faturas.tsx";
 import FaturaDetalhe from "./pages/cliente/FaturaDetalhe.tsx";
 import Servicos from "./pages/cliente/Servicos.tsx";
 import Plano from "./pages/cliente/Plano.tsx";
+import Unsubscribe from "./pages/Unsubscribe.tsx";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,8 @@ const App = () => (
           <Route path="/consultor" element={<RequireAuth role="consultor"><Consultor /></RequireAuth>} />
           <Route path="/solucao/:id" element={<PublicSolution />} />
           <Route path="/solucao/:id/aceite" element={<AceiteProposta />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
+
 
           <Route path="/cliente" element={<RequireAuth role="cliente"><ClienteLayout /></RequireAuth>}>
             <Route index element={<ClienteHome />} />
