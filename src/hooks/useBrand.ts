@@ -40,7 +40,7 @@ async function fetchBrand(): Promise<Brand | null> {
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  return (data as Brand) ?? null;
+  return (data as unknown as Brand) ?? null;
 }
 
 /**
