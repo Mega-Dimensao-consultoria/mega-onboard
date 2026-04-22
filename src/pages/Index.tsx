@@ -33,6 +33,7 @@ type Question = {
 type Answers = Record<string, string | string[] | undefined>;
 
 const Index = () => {
+  const { brand } = useBrand();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Answers>({});
   const [stepIdx, setStepIdx] = useState(0); // 0 = welcome, then 1..N steps, then success
@@ -40,7 +41,6 @@ const Index = () => {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    document.title = "Prospekta · Onboarding Mega Dimensão";
     supabase
       .from("form_questions")
       .select("*")
@@ -154,12 +154,13 @@ const Index = () => {
         <main className="flex-1 grid place-items-center px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-xl">
             <CheckCircle2 className="mx-auto h-16 w-16 text-accent mb-6" />
-            <h1 className="font-display text-4xl mb-3">Tudo certo!</h1>
+            <h1 className="font-display text-4xl mb-3">{brand?.success_title || "Tudo certo!"}</h1>
             <p className="text-muted-foreground text-lg">
-              Recebemos suas respostas. Em breve um consultor da Mega Dimensão entrará em contato para apresentar a proposta.
+              {brand?.success_message || "Recebemos suas respostas. Em breve um consultor entrará em contato."}
             </p>
           </motion.div>
         </main>
+        <SiteFooter />
       </div>
     );
   }
