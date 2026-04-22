@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { consultor } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useBrand } from "@/hooks/useBrand";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Button } from "@/components/ui/button";
@@ -9,26 +10,20 @@ import { LeadsPanel } from "@/components/consultor/LeadsPanel";
 import { QuestionsEditor } from "@/components/consultor/QuestionsEditor";
 import { BrandingPanel } from "@/components/consultor/BrandingPanel";
 import { CatalogPanel } from "@/components/consultor/CatalogPanel";
+import { ClientsPanel } from "@/components/consultor/ClientsPanel";
+import { ContractsPanel } from "@/components/consultor/ContractsPanel";
+import { ConsultorInvoicesPanel } from "@/components/consultor/ConsultorInvoicesPanel";
 import { LogOut } from "lucide-react";
 
 export default function Consultor() {
   const navigate = useNavigate();
   const { brand, refresh } = useBrand();
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    consultor.verify().then((ok) => {
-      if (!ok) navigate("/consultor/login");
-      setChecking(false);
-    });
-  }, [navigate]);
-
-  if (checking) return null;
+  const { signOut } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col bg-secondary/30">
       <BrandHeader rightSlot={
-        <Button variant="ghost" size="sm" onClick={() => { consultor.clear(); navigate("/consultor/login"); }}>
+        <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate("/auth"); }}>
           <LogOut className="h-4 w-4 mr-2" /> Sair
         </Button>
       } />
@@ -37,17 +32,23 @@ export default function Consultor() {
         <div className="mb-6">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Painel</div>
           <h1 className="font-display text-4xl">Consultor</h1>
-          <p className="text-muted-foreground mt-1">Gerencie leads, perguntas e a marca da {brand?.nome_fantasia || "consultoria"}.</p>
+          <p className="text-muted-foreground mt-1">Gerencie leads, clientes, contratos, faturas e a marca da {brand?.nome_fantasia || "consultoria"}.</p>
         </div>
 
         <Tabs defaultValue="leads" className="w-full">
-          <TabsList>
+          <TabsList className="flex flex-wrap h-auto">
             <TabsTrigger value="leads">Leads</TabsTrigger>
+            <TabsTrigger value="clients">Clientes</TabsTrigger>
+            <TabsTrigger value="contracts">Contratos</TabsTrigger>
+            <TabsTrigger value="invoices">Faturas</TabsTrigger>
             <TabsTrigger value="catalog">Catálogo</TabsTrigger>
-            <TabsTrigger value="editor">Editor de formulário</TabsTrigger>
+            <TabsTrigger value="editor">Formulário</TabsTrigger>
             <TabsTrigger value="brand">Marca</TabsTrigger>
           </TabsList>
           <TabsContent value="leads" className="mt-6"><LeadsPanel brand={brand} /></TabsContent>
+          <TabsContent value="clients" className="mt-6"><ClientsPanel /></TabsContent>
+          <TabsContent value="contracts" className="mt-6"><ContractsPanel /></TabsContent>
+          <TabsContent value="invoices" className="mt-6"><ConsultorInvoicesPanel /></TabsContent>
           <TabsContent value="catalog" className="mt-6"><CatalogPanel /></TabsContent>
           <TabsContent value="editor" className="mt-6"><QuestionsEditor /></TabsContent>
           <TabsContent value="brand" className="mt-6"><BrandingPanel brand={brand} onSaved={refresh} /></TabsContent>

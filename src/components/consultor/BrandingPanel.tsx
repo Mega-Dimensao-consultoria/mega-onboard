@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { consultor } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import type { Brand } from "@/hooks/useBrand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Search, Upload } from "lucide-react";
 
@@ -40,8 +40,12 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
 
   const onLogo = async (file: File) => {
     try {
-      const url = await consultor.uploadLogo(file);
-      setB((p) => ({ ...p, logo_url: url }));
+      const ext = file.name.split(".").pop() || "png";
+      const path = `logo-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("brand-assets").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("brand-assets").getPublicUrl(path);
+      setB((p) => ({ ...p, logo_url: pub.publicUrl }));
       toast({ title: "Logo enviada" });
     } catch (e) {
       toast({ title: "Erro upload", description: e instanceof Error ? e.message : "", variant: "destructive" });
@@ -51,7 +55,11 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
   const save = async () => {
     setSaving(true);
     try {
-      await consultor.call("save-brand", { brand: { ...b, primary_color: hexToHsl(colorHex) } });
+      const payload = { ...b, primary_color: hexToHsl(colorHex) };
+      const { error } = b.id
+        ? await supabase.from("brand_settings").update(payload).eq("id", b.id)
+        : await supabase.from("brand_settings").insert([payload]);
+      if (error) throw error;
       toast({ title: "Marca atualizada!" });
       onSaved();
     } catch (e) {
@@ -84,23 +92,56 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
         </div>
       </div>
 
-      <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-5">
-        <h2 className="font-display text-xl">Aparência</h2>
-        <div>
-          <Label>Cor primária</Label>
-          <div className="flex items-center gap-3 mt-1">
-            <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="h-12 w-16 rounded border border-border cursor-pointer" />
-            <Input value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="font-mono" />
+      <div className="space-y-6">
+        <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-5">
+          <h2 className="font-display text-xl">Aparência</h2>
+          <div>
+            <Label>Cor primária</Label>
+            <div className="flex items-center gap-3 mt-1">
+              <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="h-12 w-16 rounded border border-border cursor-pointer" />
+              <Input value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="font-mono" />
+            </div>
+          </div>
+          <div>
+            <Label>Logo</Label>
+            <div className="flex items-center gap-4 mt-1">
+              {b.logo_url && <img src={b.logo_url} alt="Logo" className="h-16 w-auto object-contain rounded border border-border p-1 bg-secondary/30" />}
+              <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border hover:bg-secondary cursor-pointer text-sm">
+                <Upload className="h-4 w-4" /> Enviar logo
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onLogo(e.target.files[0])} />
+              </label>
+            </div>
           </div>
         </div>
-        <div>
-          <Label>Logo</Label>
-          <div className="flex items-center gap-4 mt-1">
-            {b.logo_url && <img src={b.logo_url} alt="Logo" className="h-16 w-auto object-contain rounded border border-border p-1 bg-secondary/30" />}
-            <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border hover:bg-secondary cursor-pointer text-sm">
-              <Upload className="h-4 w-4" /> Enviar logo
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onLogo(e.target.files[0])} />
-            </label>
+
+        <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-4">
+          <div>
+            <h2 className="font-display text-xl">Cobranças</h2>
+            <p className="text-xs text-muted-foreground mt-1">Configure como seus clientes pagarão as faturas.</p>
+          </div>
+          <div className="grid grid-cols-[160px_1fr] gap-3">
+            <div>
+              <Label>Tipo de chave Pix</Label>
+              <Select value={b.pix_key_type || ""} onValueChange={(v) => setB({ ...b, pix_key_type: v })}>
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cpf">CPF</SelectItem>
+                  <SelectItem value="cnpj">CNPJ</SelectItem>
+                  <SelectItem value="email">E-mail</SelectItem>
+                  <SelectItem value="phone">Telefone</SelectItem>
+                  <SelectItem value="random">Aleatória</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Chave Pix</Label>
+              <Input value={b.pix_key || ""} onChange={(e) => setB({ ...b, pix_key: e.target.value })} placeholder="sua chave Pix" />
+            </div>
+          </div>
+          <div>
+            <Label>Usuário PayPal (paypal.me)</Label>
+            <Input value={b.paypal_username || ""} onChange={(e) => setB({ ...b, paypal_username: e.target.value })} placeholder="seuusuario" />
+            <p className="text-xs text-muted-foreground mt-1">Sem o @ — apenas o nome de usuário do paypal.me/<em>nome</em>.</p>
           </div>
         </div>
 
