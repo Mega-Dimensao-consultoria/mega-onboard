@@ -34,6 +34,9 @@ export function ClientsPanel() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [contracts, setContracts] = useState<ContractRow[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<Client | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     (async () => {
