@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeadsPanel } from "@/components/consultor/LeadsPanel";
 import { QuestionsEditor } from "@/components/consultor/QuestionsEditor";
 import { BrandingPanel } from "@/components/consultor/BrandingPanel";
+import { CatalogPanel } from "@/components/consultor/CatalogPanel";
 import { LogOut } from "lucide-react";
 
 export default function Consultor() {
@@ -42,10 +43,12 @@ export default function Consultor() {
         <Tabs defaultValue="leads" className="w-full">
           <TabsList>
             <TabsTrigger value="leads">Leads</TabsTrigger>
+            <TabsTrigger value="catalog">Catálogo</TabsTrigger>
             <TabsTrigger value="editor">Editor de formulário</TabsTrigger>
             <TabsTrigger value="brand">Marca</TabsTrigger>
           </TabsList>
           <TabsContent value="leads" className="mt-6"><LeadsPanel brand={brand} /></TabsContent>
+          <TabsContent value="catalog" className="mt-6"><CatalogPanel /></TabsContent>
           <TabsContent value="editor" className="mt-6"><QuestionsEditor /></TabsContent>
           <TabsContent value="brand" className="mt-6"><BrandingPanel brand={brand} onSaved={refresh} /></TabsContent>
         </Tabs>
