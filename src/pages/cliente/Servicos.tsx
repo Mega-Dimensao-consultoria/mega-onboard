@@ -21,6 +21,39 @@ type ContractItem = {
   product: { id: string; name: string; price_cents: number; type: string } | null;
 };
 
+async function notifyServiceChange(opts: {
+  clientId: string;
+  serviceName: string;
+  action: "added" | "cancelled" | "removed" | "suspended" | "reactivated";
+  byConsultant: boolean;
+  itemId: string;
+}) {
+  // busca email do cliente
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("email, full_name, nome_fantasia")
+    .eq("id", opts.clientId)
+    .maybeSingle();
+  if (!prof?.email) return;
+  try {
+    await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "service-changed",
+        recipientEmail: prof.email,
+        idempotencyKey: `service-${opts.action}-${opts.itemId}-${Date.now()}`,
+        templateData: {
+          name: prof.nome_fantasia || prof.full_name || undefined,
+          serviceName: opts.serviceName,
+          action: opts.action,
+          byConsultant: opts.byConsultant,
+        },
+      },
+    });
+  } catch (e) {
+    console.warn("notifyServiceChange failed", e);
+  }
+}
+
 export default function Servicos() {
   const { user, role } = useAuth();
   const { clientId, isImpersonating } = useClientId();
@@ -63,14 +96,14 @@ export default function Servicos() {
     setAdding(p.id);
     try {
       const next = nextBillingDate(new Date(), p.billing_cycle);
-      const { error } = await supabase.from("contract_items").insert([{
+      const { data: inserted, error } = await supabase.from("contract_items").insert([{
         contract_id: contract.id,
         product_id: p.id,
         billing_cycle: p.billing_cycle,
         quantity: 1,
         next_billing_at: next ? next.toISOString().slice(0, 10) : null,
         active: true,
-      }]);
+      }]).select("id").single();
       if (error) throw error;
       await supabase.from("audit_log").insert([{
         actor_user_id: user?.id, action: "client_added_service", target_type: "product", target_id: p.id,
@@ -78,34 +111,47 @@ export default function Servicos() {
       }]);
       await loadItems(contract.id);
       toast({ title: "Serviço contratado", description: "Será incluído na sua próxima fatura." });
+      if (clientId && inserted?.id) {
+        notifyServiceChange({
+          clientId, serviceName: p.name, action: "added",
+          byConsultant: isConsultor, itemId: inserted.id,
+        });
+      }
     } catch (e) {
       toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally { setAdding(null); }
   };
 
   const removerItem = async () => {
-    if (!confirmRemove || !contract) return;
+    if (!confirmRemove || !contract || !clientId) return;
     setRemoving(true);
+    const serviceName = confirmRemove.custom_name || confirmRemove.product?.name || "Serviço";
+    const itemId = confirmRemove.id;
     try {
-      // Consultor pode deletar; cliente apenas desativa (RLS não permite delete pro cliente).
       if (isConsultor) {
-        const { error } = await supabase.from("contract_items").delete().eq("id", confirmRemove.id);
+        const { error } = await supabase.from("contract_items").delete().eq("id", itemId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("contract_items").update({ active: false, next_billing_at: null })
-          .eq("id", confirmRemove.id);
+          .eq("id", itemId);
         if (error) throw error;
       }
       await supabase.from("audit_log").insert([{
         actor_user_id: user?.id,
         action: isConsultor ? "consultor_removed_service" : "client_cancelled_service",
         target_type: "contract_item",
-        target_id: confirmRemove.id,
-        metadata: { contract_id: contract.id, name: confirmRemove.custom_name || confirmRemove.product?.name },
+        target_id: itemId,
+        metadata: { contract_id: contract.id, name: serviceName },
       }]);
       await loadItems(contract.id);
       toast({ title: isConsultor ? "Serviço removido" : "Serviço cancelado", description: isConsultor ? "Item excluído do contrato." : "Não será incluído nas próximas faturas." });
+      // notifica cliente por email
+      notifyServiceChange({
+        clientId, serviceName,
+        action: isConsultor ? "removed" : "cancelled",
+        byConsultant: isConsultor, itemId,
+      });
       setConfirmRemove(null);
     } catch (e) {
       toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
@@ -122,7 +168,6 @@ export default function Servicos() {
         <p className="text-muted-foreground mt-1">Contrate serviços avulsos e add-ons. Tudo é incluído na sua próxima fatura.</p>
       </div>
 
-      {/* Serviços ativos */}
       {!loading && contract && (
         <section className="space-y-3">
           <h2 className="font-display text-2xl">Seus serviços ativos</h2>
@@ -162,7 +207,6 @@ export default function Servicos() {
         </section>
       )}
 
-      {/* Catálogo */}
       <section className="space-y-3">
         <h2 className="font-display text-2xl">Disponíveis</h2>
         {loading ? <Card><CardContent className="py-10 text-center text-muted-foreground">Carregando…</CardContent></Card>
@@ -204,8 +248,8 @@ export default function Servicos() {
             <AlertDialogTitle>{isConsultor ? "Remover serviço?" : "Cancelar serviço?"}</AlertDialogTitle>
             <AlertDialogDescription>
               {isConsultor
-                ? `O item "${confirmRemove?.custom_name || confirmRemove?.product?.name}" será excluído permanentemente do contrato.`
-                : `O serviço "${confirmRemove?.custom_name || confirmRemove?.product?.name}" deixará de ser cobrado nas próximas faturas. Faturas já emitidas não são afetadas.`}
+                ? `O item "${confirmRemove?.custom_name || confirmRemove?.product?.name}" será excluído permanentemente do contrato. O cliente receberá um email de notificação.`
+                : `O serviço "${confirmRemove?.custom_name || confirmRemove?.product?.name}" deixará de ser cobrado nas próximas faturas. Faturas já emitidas não são afetadas. Você receberá um email de confirmação.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

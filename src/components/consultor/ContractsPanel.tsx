@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { fmtMoney, fmtDate, cycleLabel, contractStatusLabel, nextBillingDate } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
 import { FileText, Plus, Trash2 } from "lucide-react";
@@ -22,6 +26,33 @@ type Item = {
 };
 type Product = { id: string; name: string; price_cents: number; billing_cycle: string };
 
+async function notifyServiceChange(opts: {
+  email: string | null | undefined;
+  name: string | null | undefined;
+  serviceName: string;
+  action: "added" | "cancelled" | "removed" | "suspended" | "reactivated";
+  itemId: string;
+}) {
+  if (!opts.email) return;
+  try {
+    await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "service-changed",
+        recipientEmail: opts.email,
+        idempotencyKey: `service-${opts.action}-${opts.itemId}-${Date.now()}`,
+        templateData: {
+          name: opts.name || undefined,
+          serviceName: opts.serviceName,
+          action: opts.action,
+          byConsultant: true,
+        },
+      },
+    });
+  } catch (e) {
+    console.warn("notifyServiceChange failed", e);
+  }
+}
+
 export function ContractsPanel() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
@@ -29,8 +60,8 @@ export function ContractsPanel() {
   const [active, setActive] = useState<Contract | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmRemove, setConfirmRemove] = useState<Item | null>(null);
 
-  // novo item
   const [newProductId, setNewProductId] = useState<string>("");
   const [newCustomName, setNewCustomName] = useState("");
   const [newPrice, setNewPrice] = useState("0,00");
@@ -74,6 +105,7 @@ export function ContractsPanel() {
     const cents = Math.round(Number(newPrice.replace(/\./g, "").replace(",", ".")) * 100) || 0;
     const cycle = newProductId ? products.find((p) => p.id === newProductId)?.billing_cycle || newCycle : newCycle;
     const next = nextBillingDate(new Date(), cycle);
+    const productName = newProductId ? products.find((p) => p.id === newProductId)?.name : (newCustomName || "Item");
     const payload = {
       contract_id: active.id,
       product_id: newProductId || null,
@@ -84,21 +116,49 @@ export function ContractsPanel() {
       next_billing_at: next ? next.toISOString().slice(0, 10) : null,
       active: true,
     };
-    const { error } = await supabase.from("contract_items").insert([payload]);
+    const { data: inserted, error } = await supabase.from("contract_items").insert([payload]).select("id").single();
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     setNewProductId(""); setNewCustomName(""); setNewPrice("0,00");
     open(active);
+    const prof = profiles[active.client_id];
+    if (inserted?.id && productName) {
+      notifyServiceChange({
+        email: prof?.email, name: prof?.nome_fantasia || prof?.full_name,
+        serviceName: productName, action: "added", itemId: inserted.id,
+      });
+    }
+    toast({ title: "Item adicionado", description: "Cliente notificado por email." });
   };
 
-  const removeItem = async (i: Item) => {
-    if (!confirm("Remover este item?")) return;
-    await supabase.from("contract_items").delete().eq("id", i.id);
-    if (active) open(active);
+  const doRemoveItem = async () => {
+    if (!confirmRemove || !active) return;
+    const prof = profiles[active.client_id];
+    const serviceName = confirmRemove.custom_name || confirmRemove.products?.name || "Serviço";
+    const itemId = confirmRemove.id;
+    const { error } = await supabase.from("contract_items").delete().eq("id", itemId);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    notifyServiceChange({
+      email: prof?.email, name: prof?.nome_fantasia || prof?.full_name,
+      serviceName, action: "removed", itemId,
+    });
+    setConfirmRemove(null);
+    open(active);
+    toast({ title: "Item removido", description: "Cliente notificado por email." });
   };
 
   const toggleItem = async (i: Item) => {
-    await supabase.from("contract_items").update({ active: !i.active }).eq("id", i.id);
+    const newActive = !i.active;
+    await supabase.from("contract_items").update({ active: newActive }).eq("id", i.id);
     if (active) open(active);
+    const prof = profiles[active!.client_id];
+    const serviceName = i.custom_name || i.products?.name || "Serviço";
+    notifyServiceChange({
+      email: prof?.email, name: prof?.nome_fantasia || prof?.full_name,
+      serviceName, action: newActive ? "reactivated" : "suspended", itemId: i.id,
+    });
   };
 
   const itemPrice = (i: Item) => i.custom_price_cents ?? i.products?.price_cents ?? 0;
@@ -175,12 +235,15 @@ export function ContractsPanel() {
                         <div className="text-xs text-muted-foreground">{cycleLabel[i.billing_cycle]} · {fmtMoney(itemPrice(i))}{i.next_billing_at && ` · próx. ${fmtDate(i.next_billing_at)}`}</div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch checked={i.active} onCheckedChange={() => toggleItem(i)} />
-                        <Button size="icon" variant="ghost" onClick={() => removeItem(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Switch checked={i.active} onCheckedChange={() => toggleItem(i)} title={i.active ? "Suspender" : "Reativar"} />
+                        <Button size="icon" variant="ghost" onClick={() => setConfirmRemove(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </div>
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  O cliente recebe um email a cada alteração (adição, suspensão, reativação ou remoção).
+                </p>
               </div>
 
               <div className="border border-border/60 rounded-xl p-4 space-y-3 bg-secondary/20">
@@ -219,6 +282,24 @@ export function ContractsPanel() {
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={!!confirmRemove} onOpenChange={(o) => !o && setConfirmRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover este item do contrato?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{confirmRemove?.custom_name || confirmRemove?.products?.name}" será excluído permanentemente.
+              O cliente receberá um email de notificação.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={doRemoveItem} className="bg-destructive hover:bg-destructive/90">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

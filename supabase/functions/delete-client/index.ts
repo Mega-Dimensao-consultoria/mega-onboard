@@ -1,6 +1,7 @@
 // Edge function: exclusão master de cliente.
 // Apenas usuários com role "consultor" podem invocar.
 // Remove dados relacionados (contratos, faturas, itens, papéis, perfil) e o usuário do auth.
+// Antes de excluir, captura email/nome do cliente para envio de notificação.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -21,7 +22,6 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     if (!token) return json({ error: "Missing auth" }, 401);
 
-    // Identifica o chamador
     const userClient = createClient(SUPABASE_URL, ANON, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -29,7 +29,6 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return json({ error: "Invalid token" }, 401);
     const actorId = userData.user.id;
 
-    // Verifica papel consultor
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: roleRow } = await admin
       .from("user_roles").select("role").eq("user_id", actorId).eq("role", "consultor").maybeSingle();
@@ -40,15 +39,18 @@ Deno.serve(async (req) => {
     if (!clientId) return json({ error: "client_id required" }, 400);
     if (clientId === actorId) return json({ error: "Não é possível excluir você mesmo" }, 400);
 
-    // Busca contratos do cliente
+    // Captura dados do cliente ANTES de excluir, para o email
+    const { data: profile } = await admin
+      .from("profiles").select("email, full_name, nome_fantasia").eq("id", clientId).maybeSingle();
+    const clientEmail = profile?.email || null;
+    const clientName = profile?.nome_fantasia || profile?.full_name || null;
+
     const { data: contracts } = await admin.from("contracts").select("id").eq("client_id", clientId);
     const contractIds = (contracts || []).map((c) => c.id);
 
-    // Busca faturas do cliente
     const { data: invoices } = await admin.from("invoices").select("id").eq("client_id", clientId);
     const invoiceIds = (invoices || []).map((i) => i.id);
 
-    // Apaga em cascata (ordem importa)
     if (invoiceIds.length) {
       await admin.from("payment_intents").delete().in("invoice_id", invoiceIds);
       await admin.from("invoice_items").delete().in("invoice_id", invoiceIds);
@@ -63,20 +65,47 @@ Deno.serve(async (req) => {
     await admin.from("user_roles").delete().eq("user_id", clientId);
     await admin.from("profiles").delete().eq("id", clientId);
 
-    // Audit
     await admin.from("audit_log").insert([{
       actor_user_id: actorId,
       action: "client_deleted",
       target_type: "client",
       target_id: clientId,
-      metadata: { contracts: contractIds.length, invoices: invoiceIds.length },
+      metadata: {
+        contracts: contractIds.length,
+        invoices: invoiceIds.length,
+        email: clientEmail,
+        name: clientName,
+      },
     }]);
 
-    // Remove do auth (best-effort)
     const { error: delErr } = await admin.auth.admin.deleteUser(clientId);
     if (delErr) console.warn("auth.deleteUser error", delErr.message);
 
-    return json({ ok: true });
+    // Envia email de notificação ao cliente (best-effort)
+    if (clientEmail) {
+      try {
+        await admin.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "client-deleted",
+            recipientEmail: clientEmail,
+            idempotencyKey: `client-deleted-${clientId}`,
+            templateData: {
+              name: clientName,
+              contractsCount: contractIds.length,
+              invoicesCount: invoiceIds.length,
+            },
+          },
+        });
+      } catch (e) {
+        console.warn("send-transactional-email error", e);
+      }
+    }
+
+    return json({
+      ok: true,
+      deleted: { contracts: contractIds.length, invoices: invoiceIds.length },
+      emailSentTo: clientEmail,
+    });
   } catch (e) {
     console.error(e);
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);

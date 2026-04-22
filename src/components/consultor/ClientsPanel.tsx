@@ -272,16 +272,25 @@ export function ClientsPanel() {
         open={!!confirmDelete}
         onOpenChange={(o) => { if (!o) { setConfirmDelete(null); setDeleteConfirmText(""); } }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive">Excluir cliente permanentemente?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <p>
-                  Você está prestes a apagar <strong>{confirmDelete?.nome_fantasia || confirmDelete?.full_name || confirmDelete?.email}</strong> e
-                  todos os dados relacionados: contratos, itens, faturas, comprovantes e acesso.
+                  Você está prestes a apagar <strong>{confirmDelete?.nome_fantasia || confirmDelete?.full_name || confirmDelete?.email}</strong>.
+                  Os seguintes dados serão removidos:
                 </p>
-                <p>Esta ação é irreversível. Para confirmar, digite <strong>EXCLUIR</strong> abaixo.</p>
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm space-y-1">
+                  <div className="flex justify-between"><span>Perfil e acesso</span><span className="font-medium">1</span></div>
+                  <div className="flex justify-between"><span>Contratos</span><span className="font-medium">{contracts.length}</span></div>
+                  <div className="flex justify-between"><span>Faturas (últimas 10 listadas)</span><span className="font-medium">{invoices.length}+</span></div>
+                  <div className="flex justify-between text-xs text-muted-foreground pt-1 border-t border-destructive/20"><span>Itens de contrato, comprovantes de pagamento e papéis</span><span>todos</span></div>
+                </div>
+                <p className="text-xs">
+                  Um email de notificação será enviado para <strong>{confirmDelete?.email || "—"}</strong>.
+                  Esta ação é irreversível. Digite <strong>EXCLUIR</strong> para confirmar.
+                </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
