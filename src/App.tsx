@@ -14,6 +14,12 @@ import { ClienteLayout } from "@/components/cliente/ClienteLayout";
 import ClienteHome from "./pages/cliente/ClienteHome.tsx";
 import Perfil from "./pages/cliente/Perfil.tsx";
 import ClientePlaceholder from "./pages/cliente/ClientePlaceholder.tsx";
+import Contratos from "./pages/cliente/Contratos.tsx";
+import ContratoDetalhe from "./pages/cliente/ContratoDetalhe.tsx";
+import Faturas from "./pages/cliente/Faturas.tsx";
+import FaturaDetalhe from "./pages/cliente/FaturaDetalhe.tsx";
+import Servicos from "./pages/cliente/Servicos.tsx";
+import Plano from "./pages/cliente/Plano.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,14 +36,14 @@ const App = () => (
           <Route path="/solucao/:id" element={<PublicSolution />} />
           <Route path="/solucao/:id/aceite" element={<AceiteProposta />} />
 
-          <Route path="/cliente/contratos/:id" element={<RequireAuth role="cliente"><ClienteLayout /></RequireAuth>}></Route>
-
           <Route path="/cliente" element={<RequireAuth role="cliente"><ClienteLayout /></RequireAuth>}>
             <Route index element={<ClienteHome />} />
-            <Route path="contratos" element={<ClientePlaceholder title="Contratos" description="Seus contratos ativos e histórico." />} />
-            <Route path="faturas" element={<ClientePlaceholder title="Faturas" description="Faturas em aberto, pagas e vencidas." />} />
-            <Route path="servicos" element={<ClientePlaceholder title="Serviços" description="Serviços a la carte disponíveis para contratação." />} />
-            <Route path="plano" element={<ClientePlaceholder title="Plano" description="Seu plano atual e opções de troca." />} />
+            <Route path="contratos" element={<Contratos />} />
+            <Route path="contratos/:id" element={<ContratoDetalhe />} />
+            <Route path="faturas" element={<Faturas />} />
+            <Route path="faturas/:id" element={<FaturaDetalhe />} />
+            <Route path="servicos" element={<Servicos />} />
+            <Route path="plano" element={<Plano />} />
             <Route path="projetos" element={<ClientePlaceholder title="Projetos" description="Acompanhamento dos projetos contratados." />} />
             <Route path="perfil" element={<Perfil />} />
           </Route>
