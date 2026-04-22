@@ -168,8 +168,13 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-secondary/30">
       <BrandHeader rightSlot={
-        <Link to="/consultor/login" className="text-xs text-muted-foreground hover:text-primary transition">
-          Área do consultor
+        <Link
+          to="/auth"
+          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition"
+        >
+          <UserCircle2 className="h-4 w-4" />
+          <span className="hidden sm:inline">{brand?.client_login_cta || "Acesse sua área do cliente"}</span>
+          <span className="sm:hidden">Área do cliente</span>
         </Link>
       } />
 
@@ -184,16 +189,16 @@ const Index = () => {
               className="text-center"
             >
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-4 py-1.5 text-xs font-medium tracking-wide uppercase mb-6">
-                <Sparkles className="h-3.5 w-3.5" /> Onboarding inteligente
+                <Sparkles className="h-3.5 w-3.5" /> {brand?.hero_badge || "Onboarding inteligente"}
               </div>
               <h1 className="font-display text-5xl md:text-6xl text-balance leading-[1.05] mb-6">
-                Vamos desenhar o <span className="italic text-primary">projeto certo</span> para você.
+                {renderHeroTitle(brand?.hero_title || "Vamos desenhar o projeto certo para você.")}
               </h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-10">
-                Em poucos minutos, você responde as perguntas estratégicas que orientam o briefing técnico do seu projeto com a Mega Dimensão.
+                {brand?.hero_subtitle || "Em poucos minutos, você responde as perguntas estratégicas que orientam o briefing técnico do seu projeto."}
               </p>
               <Button size="lg" className="h-14 px-8 text-base" onClick={() => setStepIdx(1)}>
-                Começar agora <ArrowRight className="ml-2 h-5 w-5" />
+                {brand?.hero_cta_label || "Começar agora"} <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16">
@@ -251,9 +256,7 @@ const Index = () => {
         </AnimatePresence>
       </main>
 
-      <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Mega Dimensão Consultoria · Prospekta
-      </footer>
+      <SiteFooter />
     </div>
   );
 };
