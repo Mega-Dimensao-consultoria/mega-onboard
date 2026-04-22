@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { fmtMoney, fmtDate, cycleLabel, nextBillingDate, waLink, buildInvoicePaidMessage } from "@/lib/format";
+import { fmtMoney, fmtDate, cycleLabel, nextBillingDate } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowRightLeft, CheckCircle2, XCircle, Clock } from "lucide-react";
