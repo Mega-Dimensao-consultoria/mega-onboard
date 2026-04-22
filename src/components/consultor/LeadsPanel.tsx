@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { consultor } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,7 @@ import type { Brand } from "@/hooks/useBrand";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { FileText, Inbox, Save, Download, MessageCircle, Eye, Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { onlyDigits, waLink, fmtDateTime } from "@/lib/format";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -23,16 +24,6 @@ type Lead = {
 };
 type Answer = { id: string; question_label: string; answer: string | null };
 
-function onlyDigits(s: string | null | undefined) {
-  return (s || "").replace(/\D/g, "");
-}
-
-function waLink(phone: string | null | undefined, message: string) {
-  const num = onlyDigits(phone);
-  const withCountry = num.length <= 11 ? `55${num}` : num;
-  return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
-}
-
 export function LeadsPanel({ brand }: { brand: Brand | null }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,10 +34,26 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const refreshLeads = async () => {
+    const { data } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
+    setLeads((data as Lead[]) || []);
+  };
+
+  useEffect(() => {
+    refreshLeads().finally(() => setLoading(false));
+  }, []);
+
   const deleteLead = async (lead: Lead) => {
     setDeletingId(lead.id);
     try {
-      await consultor.call("delete-lead", { id: lead.id });
+      // delete storage briefings (files start with lead.id)
+      const { data: files } = await supabase.storage.from("briefings").list("", { limit: 100, search: lead.id });
+      if (files?.length) {
+        await supabase.storage.from("briefings").remove(files.map((f) => f.name));
+      }
+      await supabase.from("lead_answers").delete().eq("lead_id", lead.id);
+      const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+      if (error) throw error;
       toast({ title: "Lead excluído" });
       if (active?.id === lead.id) setActive(null);
       setLeads((prev) => prev.filter((l) => l.id !== lead.id));
@@ -57,31 +64,22 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
     }
   };
 
-  const refreshLeads = async () => {
-    const d = await consultor.call("leads");
-    setLeads(d.leads || []);
-  };
-
-  useEffect(() => {
-    refreshLeads().finally(() => setLoading(false));
-  }, []);
-
   const openLead = async (l: Lead) => {
     setActive(l);
     setSolution(l.technical_solution || "");
-    const d = await consultor.call("lead-detail", { id: l.id });
-    setAnswers(d.answers || []);
-    if (d.lead) {
-      setActive(d.lead);
-      setSolution(d.lead.technical_solution || "");
-    }
+    const { data } = await supabase.from("lead_answers").select("*").eq("lead_id", l.id).order("created_at");
+    setAnswers((data as Answer[]) || []);
   };
 
   const saveSolution = async () => {
     if (!active) return;
     setSavingSolution(true);
     try {
-      await consultor.call("update-solution", { id: active.id, technical_solution: solution });
+      const { error } = await supabase
+        .from("leads")
+        .update({ technical_solution: solution, technical_solution_updated_at: new Date().toISOString() })
+        .eq("id", active.id);
+      if (error) throw error;
       toast({ title: "Solução técnica salva" });
       setActive({ ...active, technical_solution: solution, technical_solution_updated_at: new Date().toISOString() });
       refreshLeads();
@@ -103,7 +101,11 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
     const leadForPdf = { ...active, technical_solution: solution };
     const { blob, filename } = generateBRD(brand, leadForPdf, answers, { returnBlob: true });
     if (!blob) return null;
-    return await consultor.uploadBriefingPdf(active.id, blob, filename);
+    const path = `${active.id}/${Date.now()}-${filename}`;
+    const { error } = await supabase.storage.from("briefings").upload(path, blob, { contentType: "application/pdf", upsert: true });
+    if (error) throw error;
+    const { data: signed } = await supabase.storage.from("briefings").createSignedUrl(path, 60 * 60 * 24 * 30);
+    return signed?.signedUrl || null;
   };
 
   const sendBriefingByWhatsApp = async () => {
@@ -135,12 +137,11 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
       toast({ title: "Salve uma solução técnica antes de enviar", variant: "destructive" });
       return;
     }
-    // Ensure latest solution is persisted before sharing the link
     if ((active.technical_solution || "") !== solution) {
       await saveSolution();
     }
     const url = `${window.location.origin}/solucao/${active.id}`;
-    const msg = `Olá ${active.contact_name || ""}! Segue a solução técnica que preparamos:\n\n${url}\n\n${brand?.nome_fantasia || "Mega Dimensão"}`;
+    const msg = `Olá ${active.contact_name || ""}! Segue a solução técnica que preparamos:\n\n${url}\n\nPara aceitar a proposta, clique em "Aceitar proposta" na página.\n\n${brand?.nome_fantasia || "Mega Dimensão"}`;
     window.open(waLink(active.contact_whatsapp, msg), "_blank");
   };
 
@@ -177,7 +178,7 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
                 <td className="px-5 py-3">{l.solution_type ? <Badge variant="secondary">{l.solution_type}</Badge> : "—"}</td>
                 <td className="px-5 py-3 text-muted-foreground">{l.contact_email || "—"}</td>
                 <td className="px-5 py-3 text-muted-foreground">{l.contact_whatsapp || "—"}</td>
-                <td className="px-5 py-3 text-muted-foreground">{new Date(l.created_at).toLocaleString("pt-BR")}</td>
+                <td className="px-5 py-3 text-muted-foreground">{fmtDateTime(l.created_at)}</td>
                 <td className="px-5 py-3">
                   {l.technical_solution
                     ? <Badge>Preenchidos</Badge>
@@ -238,7 +239,7 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
                 <Info label="E-mail" value={active.contact_email} />
                 <Info label="WhatsApp" value={active.contact_whatsapp} />
                 <Info label="Solução" value={active.solution_type} />
-                <Info label="Recebido" value={new Date(active.created_at).toLocaleString("pt-BR")} />
+                <Info label="Recebido" value={fmtDateTime(active.created_at)} />
               </div>
 
               <Tabs defaultValue="solution" className="w-full">
@@ -252,7 +253,7 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
                   <div className="text-xs text-muted-foreground">
                     Apontamentos coletados na reunião. Edite quando quiser.
                     {active.technical_solution_updated_at && (
-                      <> · Última atualização: {new Date(active.technical_solution_updated_at).toLocaleString("pt-BR")}</>
+                      <> · Última atualização: {fmtDateTime(active.technical_solution_updated_at)}</>
                     )}
                   </div>
                   <RichTextEditor value={solution} onChange={setSolution} />
@@ -308,7 +309,7 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
                       disabled={!solution.trim()}
                     />
                     <ShareCard
-                      title="Gerar BRD (botão clássico)"
+                      title="Gerar BRD (clássico)"
                       desc="Apenas baixa o PDF, sem upload."
                       icon={<FileText className="h-4 w-4" />}
                       onClick={downloadPdf}

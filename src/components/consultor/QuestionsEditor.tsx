@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { consultor } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,23 +50,37 @@ export function QuestionsEditor() {
 
   const save = async () => {
     if (!editing?.label || !editing.field_type) return toast({ title: "Preencha pergunta e tipo", variant: "destructive" });
-    try {
-      await consultor.call("save-question", { question: editing });
-      toast({ title: "Pergunta salva" });
-      setEditing(null);
-      load();
-    } catch (e) {
-      toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    const payload = {
+      step: editing.step ?? 1,
+      step_title: editing.step_title || null,
+      order_index: editing.order_index ?? 99,
+      label: editing.label,
+      field_type: editing.field_type,
+      options: editing.options || [],
+      mask: editing.mask || null,
+      required: editing.required ?? true,
+      depends_on: editing.depends_on || null,
+      depends_value: editing.depends_value || null,
+    };
+    const { error } = editing.id
+      ? await supabase.from("form_questions").update(payload).eq("id", editing.id)
+      : await supabase.from("form_questions").insert([payload]);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
     }
+    toast({ title: "Pergunta salva" });
+    setEditing(null);
+    load();
   };
 
   const remove = async (id: string) => {
     if (!confirm("Excluir esta pergunta?")) return;
-    await consultor.call("delete-question", { id });
-    load();
+    const { error } = await supabase.from("form_questions").delete().eq("id", id);
+    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    else load();
   };
 
-  // Group by step preserving order
   const grouped = questions.reduce((acc, q) => {
     (acc[q.step] = acc[q.step] || []).push(q);
     return acc;
@@ -83,16 +96,15 @@ export function QuestionsEditor() {
     if (oldIdx === -1 || newIdx === -1) return;
 
     const newList = arrayMove(list, oldIdx, newIdx).map((q, i) => ({ ...q, order_index: i + 1 }));
-    // Optimistic update
     const others = questions.filter((q) => q.step !== step);
     setQuestions([...others, ...newList].sort((a, b) => a.step - b.step || a.order_index - b.order_index));
 
     setSavingOrder(true);
     try {
-      await consultor.call("reorder-questions", {
-        items: newList.map((q) => ({ id: q.id, step: q.step, order_index: q.order_index })),
-      });
-    } catch (err) {
+      await Promise.all(newList.map((q) =>
+        supabase.from("form_questions").update({ order_index: q.order_index }).eq("id", q.id)
+      ));
+    } catch {
       toast({ title: "Erro ao salvar ordem", variant: "destructive" });
       load();
     } finally {
@@ -105,7 +117,7 @@ export function QuestionsEditor() {
       <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
           <p className="text-sm text-muted-foreground">
-            Arraste <GripVertical className="inline h-3.5 w-3.5" /> para reordenar. Clique em <Pencil className="inline h-3.5 w-3.5" /> para editar rapidamente.
+            Arraste <GripVertical className="inline h-3.5 w-3.5" /> para reordenar. Clique em <Pencil className="inline h-3.5 w-3.5" /> para editar.
           </p>
           {savingOrder && <p className="text-xs text-primary mt-1">Salvando nova ordem…</p>}
         </div>

@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       brand_settings: {
         Row: {
           cnpj: string | null
@@ -23,6 +53,9 @@ export type Database = {
           id: string
           logo_url: string | null
           nome_fantasia: string | null
+          paypal_username: string | null
+          pix_key: string | null
+          pix_key_type: string | null
           primary_color: string | null
           razao_social: string | null
           telefone: string | null
@@ -36,6 +69,9 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome_fantasia?: string | null
+          paypal_username?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           primary_color?: string | null
           razao_social?: string | null
           telefone?: string | null
@@ -49,12 +85,126 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome_fantasia?: string | null
+          paypal_username?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           primary_color?: string | null
           razao_social?: string | null
           telefone?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      contract_items: {
+        Row: {
+          active: boolean
+          billing_cycle: string
+          contract_id: string
+          created_at: string
+          custom_name: string | null
+          custom_price_cents: number | null
+          id: string
+          next_billing_at: string | null
+          product_id: string | null
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          billing_cycle: string
+          contract_id: string
+          created_at?: string
+          custom_name?: string | null
+          custom_price_cents?: number | null
+          id?: string
+          next_billing_at?: string | null
+          product_id?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          billing_cycle?: string
+          contract_id?: string
+          created_at?: string
+          custom_name?: string | null
+          custom_price_cents?: number | null
+          id?: string
+          next_billing_at?: string | null
+          product_id?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_items_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          accepted_at: string | null
+          accepted_ip: string | null
+          client_id: string
+          created_at: string
+          id: string
+          lead_id: string | null
+          notes: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_ip?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_ip?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       form_questions: {
         Row: {
@@ -108,6 +258,120 @@ export type Database = {
             columns: ["depends_on"]
             isOneToOne: false
             referencedRelation: "form_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_items: {
+        Row: {
+          amount_cents: number
+          contract_item_id: string | null
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+        }
+        Insert: {
+          amount_cents?: number
+          contract_item_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+        }
+        Update: {
+          amount_cents?: number
+          contract_item_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_contract_item_id_fkey"
+            columns: ["contract_item_id"]
+            isOneToOne: false
+            referencedRelation: "contract_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          client_id: string
+          contract_id: string
+          created_at: string
+          due_date: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_proof_url: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          subtotal_cents: number
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          contract_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_proof_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          subtotal_cents?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          contract_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_proof_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          subtotal_cents?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
         ]
@@ -189,6 +453,56 @@ export type Database = {
           technical_solution_updated_at?: string | null
         }
         Relationships: []
+      }
+      payment_intents: {
+        Row: {
+          copy_paste: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          invoice_id: string
+          provider: string
+          provider_ref: string | null
+          qr_code: string | null
+          raw_payload: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          copy_paste?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invoice_id: string
+          provider: string
+          provider_ref?: string | null
+          qr_code?: string | null
+          raw_payload?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          copy_paste?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invoice_id?: string
+          provider?: string
+          provider_ref?: string | null
+          qr_code?: string | null
+          raw_payload?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_intents_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
