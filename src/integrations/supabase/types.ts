@@ -684,6 +684,54 @@ export type Database = {
           },
         ]
       }
+      plan_change_requests: {
+        Row: {
+          client_id: string
+          client_note: string | null
+          consultor_note: string | null
+          contract_id: string
+          created_at: string
+          current_item_id: string | null
+          current_product_id: string | null
+          decided_at: string | null
+          decided_by: string | null
+          desired_product_id: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          client_note?: string | null
+          consultor_note?: string | null
+          contract_id: string
+          created_at?: string
+          current_item_id?: string | null
+          current_product_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          desired_product_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          client_note?: string | null
+          consultor_note?: string | null
+          contract_id?: string
+          created_at?: string
+          current_item_id?: string | null
+          current_product_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          desired_product_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
