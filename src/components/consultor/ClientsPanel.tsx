@@ -69,6 +69,27 @@ export function ClientsPanel() {
     navigate("/cliente");
   };
 
+  const deleteClient = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-client", {
+        body: { client_id: confirmDelete.id },
+      });
+      if (error) throw error;
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+      setClients((prev) => prev.filter((c) => c.id !== confirmDelete.id));
+      toast({ title: "Cliente excluído", description: "Todos os dados relacionados foram removidos." });
+      setConfirmDelete(null);
+      setDeleteConfirmText("");
+      setSelected(null);
+    } catch (e) {
+      toast({ title: "Erro ao excluir", description: e instanceof Error ? e.message : "Falha desconhecida", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const filtered = clients.filter((c) => {
     if (!q) return true;
     const s = q.toLowerCase();
