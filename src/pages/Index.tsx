@@ -361,4 +361,16 @@ function renderField(
   return null;
 }
 
+function renderHeroTitle(title: string) {
+  // Suporta *destaque* renderizado em itálico/cor primária
+  const parts = title.split(/(\*[^*]+\*)/g);
+  return parts.map((p, i) =>
+    p.startsWith("*") && p.endsWith("*") ? (
+      <span key={i} className="italic text-primary">{p.slice(1, -1)}</span>
+    ) : (
+      <span key={i}>{p}</span>
+    )
+  );
+}
+
 export default Index;
