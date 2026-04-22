@@ -13,6 +13,10 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [colorHex, setColorHex] = useState(hslToHex(brand?.primary_color || "210 65% 24%"));
+  const [clientColorHex, setClientColorHex] = useState(
+    hslToHex(brand?.client_primary_color || brand?.primary_color || "210 65% 24%")
+  );
+  const [useClientColor, setUseClientColor] = useState(!!brand?.client_primary_color);
 
   const searchCNPJ = async () => {
     const cnpj = (b.cnpj || "").replace(/\D/g, "");
@@ -55,7 +59,11 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
   const save = async () => {
     setSaving(true);
     try {
-      const payload = { ...b, primary_color: hexToHsl(colorHex) };
+      const payload = {
+        ...b,
+        primary_color: hexToHsl(colorHex),
+        client_primary_color: useClientColor ? hexToHsl(clientColorHex) : null,
+      };
       const { error } = b.id
         ? await supabase.from("brand_settings").update(payload).eq("id", b.id)
         : await supabase.from("brand_settings").insert([payload]);
@@ -96,11 +104,30 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
         <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-5">
           <h2 className="font-display text-xl">Aparência</h2>
           <div>
-            <Label>Cor primária</Label>
+            <Label>Cor primária do sistema (sites públicos)</Label>
             <div className="flex items-center gap-3 mt-1">
               <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="h-12 w-16 rounded border border-border cursor-pointer" />
               <Input value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="font-mono" />
             </div>
+            <p className="text-[11px] text-muted-foreground mt-1">Aplica-se a todas as páginas públicas e à marca exibida aos clientes.</p>
+          </div>
+          <div className="rounded-lg border border-dashed border-border p-4 space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useClientColor}
+                onChange={(e) => setUseClientColor(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="text-sm font-medium">Usar uma cor diferente apenas no painel do cliente</span>
+            </label>
+            {useClientColor && (
+              <div className="flex items-center gap-3 mt-1">
+                <input type="color" value={clientColorHex} onChange={(e) => setClientColorHex(e.target.value)} className="h-12 w-16 rounded border border-border cursor-pointer" />
+                <Input value={clientColorHex} onChange={(e) => setClientColorHex(e.target.value)} className="font-mono" />
+              </div>
+            )}
+            <p className="text-[11px] text-muted-foreground">A cor do sistema aplica-se a todos os clientes — eles não conseguem trocar.</p>
           </div>
           <div>
             <Label>Logo</Label>
