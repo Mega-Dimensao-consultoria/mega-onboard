@@ -46,10 +46,18 @@ export type Database = {
       }
       brand_settings: {
         Row: {
+          client_login_cta: string | null
+          client_primary_color: string | null
           cnpj: string | null
           created_at: string
           email: string | null
           endereco: string | null
+          footer_links: Json | null
+          footer_text: string | null
+          hero_badge: string | null
+          hero_cta_label: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
           id: string
           logo_url: string | null
           nome_fantasia: string | null
@@ -58,14 +66,26 @@ export type Database = {
           pix_key_type: string | null
           primary_color: string | null
           razao_social: string | null
+          site_description: string | null
+          site_title: string | null
+          success_message: string | null
+          success_title: string | null
           telefone: string | null
           updated_at: string
         }
         Insert: {
+          client_login_cta?: string | null
+          client_primary_color?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
+          footer_links?: Json | null
+          footer_text?: string | null
+          hero_badge?: string | null
+          hero_cta_label?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
           id?: string
           logo_url?: string | null
           nome_fantasia?: string | null
@@ -74,14 +94,26 @@ export type Database = {
           pix_key_type?: string | null
           primary_color?: string | null
           razao_social?: string | null
+          site_description?: string | null
+          site_title?: string | null
+          success_message?: string | null
+          success_title?: string | null
           telefone?: string | null
           updated_at?: string
         }
         Update: {
+          client_login_cta?: string | null
+          client_primary_color?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
+          footer_links?: Json | null
+          footer_text?: string | null
+          hero_badge?: string | null
+          hero_cta_label?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
           id?: string
           logo_url?: string | null
           nome_fantasia?: string | null
@@ -90,6 +122,10 @@ export type Database = {
           pix_key_type?: string | null
           primary_color?: string | null
           razao_social?: string | null
+          site_description?: string | null
+          site_title?: string | null
+          success_message?: string | null
+          success_title?: string | null
           telefone?: string | null
           updated_at?: string
         }

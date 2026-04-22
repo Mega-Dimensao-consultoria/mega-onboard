@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, FileText, Receipt, Sparkles, CreditCard, User2, FolderKanban, LogOut, Eye, X } from "lucide-react";
@@ -18,6 +19,8 @@ const items = [
 
 export function ClienteLayout() {
   const { signOut, user, role } = useAuth();
+  // Aplica a cor específica do cliente (se configurada) sobrescrevendo --primary
+  useBrand("cliente");
   const navigate = useNavigate();
   const impersonatedId = getImpersonatedClientId();
   const impersonatedName = getImpersonatedClientName();

@@ -1,14 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /cliente
+Disallow: /consultor
+Disallow: /auth
+Disallow: /unsubscribe
+
 User-agent: Googlebot
 Allow: /
+Disallow: /cliente
+Disallow: /consultor
 
 User-agent: Bingbot
 Allow: /
+Disallow: /cliente
+Disallow: /consultor
 
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
-Allow: /
+Sitemap: https://prospekta.megadimensao.com.br/sitemap.xml

@@ -11,8 +11,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Sparkles, UserCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useBrand } from "@/hooks/useBrand";
+import { SiteFooter } from "@/components/SiteFooter";
 
 type Question = {
   id: string;
@@ -31,6 +33,7 @@ type Question = {
 type Answers = Record<string, string | string[] | undefined>;
 
 const Index = () => {
+  const { brand } = useBrand();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Answers>({});
   const [stepIdx, setStepIdx] = useState(0); // 0 = welcome, then 1..N steps, then success
@@ -38,7 +41,6 @@ const Index = () => {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    document.title = "Prospekta · Onboarding Mega Dimensão";
     supabase
       .from("form_questions")
       .select("*")
@@ -152,12 +154,13 @@ const Index = () => {
         <main className="flex-1 grid place-items-center px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-xl">
             <CheckCircle2 className="mx-auto h-16 w-16 text-accent mb-6" />
-            <h1 className="font-display text-4xl mb-3">Tudo certo!</h1>
+            <h1 className="font-display text-4xl mb-3">{brand?.success_title || "Tudo certo!"}</h1>
             <p className="text-muted-foreground text-lg">
-              Recebemos suas respostas. Em breve um consultor da Mega Dimensão entrará em contato para apresentar a proposta.
+              {brand?.success_message || "Recebemos suas respostas. Em breve um consultor entrará em contato."}
             </p>
           </motion.div>
         </main>
+        <SiteFooter />
       </div>
     );
   }
@@ -165,8 +168,13 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-secondary/30">
       <BrandHeader rightSlot={
-        <Link to="/consultor/login" className="text-xs text-muted-foreground hover:text-primary transition">
-          Área do consultor
+        <Link
+          to="/auth"
+          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium transition"
+        >
+          <UserCircle2 className="h-4 w-4" />
+          <span className="hidden sm:inline">{brand?.client_login_cta || "Acesse sua área do cliente"}</span>
+          <span className="sm:hidden">Área do cliente</span>
         </Link>
       } />
 
@@ -181,16 +189,16 @@ const Index = () => {
               className="text-center"
             >
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-4 py-1.5 text-xs font-medium tracking-wide uppercase mb-6">
-                <Sparkles className="h-3.5 w-3.5" /> Onboarding inteligente
+                <Sparkles className="h-3.5 w-3.5" /> {brand?.hero_badge || "Onboarding inteligente"}
               </div>
               <h1 className="font-display text-5xl md:text-6xl text-balance leading-[1.05] mb-6">
-                Vamos desenhar o <span className="italic text-primary">projeto certo</span> para você.
+                {renderHeroTitle(brand?.hero_title || "Vamos desenhar o projeto certo para você.")}
               </h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-10">
-                Em poucos minutos, você responde as perguntas estratégicas que orientam o briefing técnico do seu projeto com a Mega Dimensão.
+                {brand?.hero_subtitle || "Em poucos minutos, você responde as perguntas estratégicas que orientam o briefing técnico do seu projeto."}
               </p>
               <Button size="lg" className="h-14 px-8 text-base" onClick={() => setStepIdx(1)}>
-                Começar agora <ArrowRight className="ml-2 h-5 w-5" />
+                {brand?.hero_cta_label || "Começar agora"} <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16">
@@ -248,9 +256,7 @@ const Index = () => {
         </AnimatePresence>
       </main>
 
-      <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Mega Dimensão Consultoria · Prospekta
-      </footer>
+      <SiteFooter />
     </div>
   );
 };
@@ -353,6 +359,18 @@ function renderField(
     );
   }
   return null;
+}
+
+function renderHeroTitle(title: string) {
+  // Suporta *destaque* renderizado em itálico/cor primária
+  const parts = title.split(/(\*[^*]+\*)/g);
+  return parts.map((p, i) =>
+    p.startsWith("*") && p.endsWith("*") ? (
+      <span key={i} className="italic text-primary">{p.slice(1, -1)}</span>
+    ) : (
+      <span key={i}>{p}</span>
+    )
+  );
 }
 
 export default Index;
