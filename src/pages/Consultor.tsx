@@ -13,6 +13,7 @@ import { CatalogPanel } from "@/components/consultor/CatalogPanel";
 import { ClientsPanel } from "@/components/consultor/ClientsPanel";
 import { ContractsPanel } from "@/components/consultor/ContractsPanel";
 import { ConsultorInvoicesPanel } from "@/components/consultor/ConsultorInvoicesPanel";
+import { PlanChangeRequestsPanel } from "@/components/consultor/PlanChangeRequestsPanel";
 import { AuditLogPanel } from "@/components/consultor/AuditLogPanel";
 import { LogOut } from "lucide-react";
 
@@ -47,6 +48,7 @@ export default function Consultor() {
               <TabsTrigger value="clients">Clientes</TabsTrigger>
               <TabsTrigger value="contracts">Contratos</TabsTrigger>
               <TabsTrigger value="invoices">Faturas</TabsTrigger>
+              <TabsTrigger value="plan-changes">Trocas de plano</TabsTrigger>
               <TabsTrigger value="catalog">Catálogo</TabsTrigger>
               <TabsTrigger value="editor">Formulário</TabsTrigger>
               <TabsTrigger value="content">Conteúdo</TabsTrigger>
@@ -59,6 +61,7 @@ export default function Consultor() {
           <TabsContent value="clients" className="mt-6"><ClientsPanel /></TabsContent>
           <TabsContent value="contracts" className="mt-6"><ContractsPanel /></TabsContent>
           <TabsContent value="invoices" className="mt-6"><ConsultorInvoicesPanel /></TabsContent>
+          <TabsContent value="plan-changes" className="mt-6"><PlanChangeRequestsPanel /></TabsContent>
           <TabsContent value="catalog" className="mt-6"><CatalogPanel /></TabsContent>
           <TabsContent value="editor" className="mt-6"><QuestionsEditor /></TabsContent>
           <TabsContent value="content" className="mt-6"><ContentPanel brand={brand} onSaved={refresh} /></TabsContent>
