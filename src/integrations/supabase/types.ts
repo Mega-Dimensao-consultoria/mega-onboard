@@ -881,7 +881,69 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      brand_public: {
+        Row: {
+          client_login_cta: string | null
+          client_primary_color: string | null
+          created_at: string | null
+          footer_links: Json | null
+          footer_text: string | null
+          hero_badge: string | null
+          hero_cta_label: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string | null
+          logo_url: string | null
+          nome_fantasia: string | null
+          primary_color: string | null
+          razao_social: string | null
+          site_description: string | null
+          site_title: string | null
+          success_message: string | null
+          success_title: string | null
+        }
+        Insert: {
+          client_login_cta?: string | null
+          client_primary_color?: string | null
+          created_at?: string | null
+          footer_links?: Json | null
+          footer_text?: string | null
+          hero_badge?: string | null
+          hero_cta_label?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string | null
+          logo_url?: string | null
+          nome_fantasia?: string | null
+          primary_color?: string | null
+          razao_social?: string | null
+          site_description?: string | null
+          site_title?: string | null
+          success_message?: string | null
+          success_title?: string | null
+        }
+        Update: {
+          client_login_cta?: string | null
+          client_primary_color?: string | null
+          created_at?: string | null
+          footer_links?: Json | null
+          footer_text?: string | null
+          hero_badge?: string | null
+          hero_cta_label?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string | null
+          logo_url?: string | null
+          nome_fantasia?: string | null
+          primary_color?: string | null
+          razao_social?: string | null
+          site_description?: string | null
+          site_title?: string | null
+          success_message?: string | null
+          success_title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_email: {
@@ -891,6 +953,27 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_public_proposal: {
+        Args: { _lead_id: string }
+        Returns: {
+          accepted: boolean
+          billing_cycle: string
+          contact_name: string
+          custom_name: string
+          custom_price_cents: number
+          item_id: string
+          lead_created_at: string
+          lead_id: string
+          product_id: string
+          product_name: string
+          product_price_cents: number
+          quantity: number
+          solution_type: string
+          sort_order: number
+          technical_solution: string
+          technical_solution_updated_at: string
+        }[]
       }
       get_user_role: {
         Args: { _user_id: string }
