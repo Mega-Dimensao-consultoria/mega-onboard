@@ -2,8 +2,9 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, FileText, Receipt, Sparkles, CreditCard, User2, FolderKanban, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, Receipt, Sparkles, CreditCard, User2, FolderKanban, LogOut, Eye, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getImpersonatedClientId, getImpersonatedClientName, stopImpersonate } from "@/lib/impersonate";
 
 const items = [
   { to: "/cliente", icon: LayoutDashboard, label: "Início", end: true },
@@ -16,15 +17,38 @@ const items = [
 ];
 
 export function ClienteLayout() {
-  const { signOut, user } = useAuth();
+  const { signOut, user, role } = useAuth();
   const navigate = useNavigate();
+  const impersonatedId = getImpersonatedClientId();
+  const impersonatedName = getImpersonatedClientName();
+  const isImpersonating = role === "consultor" && !!impersonatedId;
+
+  const exitImpersonate = () => {
+    stopImpersonate();
+    navigate("/consultor");
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-secondary/30">
+      {isImpersonating && (
+        <div className="bg-amber-500 text-amber-950 px-4 py-2 text-sm flex items-center justify-center gap-3 flex-wrap">
+          <Eye className="h-4 w-4" />
+          <span>Modo visualização — você está vendo a área como <strong>{impersonatedName || "o cliente"}</strong>. Alterações são desencorajadas.</span>
+          <Button size="sm" variant="outline" className="h-7 bg-white/90 hover:bg-white" onClick={exitImpersonate}>
+            <X className="h-3 w-3 mr-1" /> Sair do modo visualização
+          </Button>
+        </div>
+      )}
       <BrandHeader rightSlot={
-        <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate("/auth"); }}>
-          <LogOut className="h-4 w-4 mr-2" /> Sair
-        </Button>
+        isImpersonating ? (
+          <Button variant="ghost" size="sm" onClick={exitImpersonate}>
+            <X className="h-4 w-4 mr-2" /> Voltar ao painel
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate("/auth"); }}>
+            <LogOut className="h-4 w-4 mr-2" /> Sair
+          </Button>
+        )
       } />
       <div className="flex-1 container py-8 grid lg:grid-cols-[220px_1fr] gap-8">
         <aside className="lg:sticky lg:top-24 self-start">
