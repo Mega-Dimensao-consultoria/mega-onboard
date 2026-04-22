@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { useClientId } from "@/hooks/useClientId";
 import { useBrand } from "@/hooks/useBrand";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fmtMoney, fmtDate, invoiceStatusLabel } from "@/lib/format";
+import { buildPixPayload } from "@/lib/pix";
 import { ArrowLeft, Copy, ExternalLink, CheckCircle2, QrCode } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -42,15 +44,40 @@ export default function FaturaDetalhe() {
 
   useEffect(() => { refresh(); }, [id]);
 
-  const pixCopy = `${brand?.pix_key || ""}`;
+  const pixPayload = useMemo(() => {
+    if (!brand?.pix_key || !inv?.total_cents) return null;
+    try {
+      return buildPixPayload({
+        pixKey: brand.pix_key,
+        amountCents: inv.total_cents,
+        merchantName: brand.razao_social || brand.nome_fantasia || "RECEBEDOR",
+        merchantCity: "BRASIL",
+        txid: inv.id.replace(/-/g, "").slice(0, 25),
+        description: `Fatura ${inv.id.slice(0, 8).toUpperCase()}`,
+      });
+    } catch {
+      return null;
+    }
+  }, [brand, inv]);
+
+  const [pixQrDataUrl, setPixQrDataUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pixPayload) { setPixQrDataUrl(null); return; }
+    QRCode.toDataURL(pixPayload, { width: 256, margin: 1 }).then(setPixQrDataUrl).catch(() => setPixQrDataUrl(null));
+  }, [pixPayload]);
+
   const paypalUrl = brand?.paypal_username
     ? `https://www.paypal.com/paypalme/${brand.paypal_username}/${(inv?.total_cents || 0) / 100}`
     : null;
 
   const copyPix = async () => {
-    if (!pixCopy) return toast({ title: "Chave Pix não configurada", variant: "destructive" });
-    await navigator.clipboard.writeText(pixCopy);
-    toast({ title: "Chave Pix copiada" });
+    if (!pixPayload) {
+      if (!brand?.pix_key) return toast({ title: "Chave Pix não configurada", variant: "destructive" });
+      await navigator.clipboard.writeText(brand.pix_key);
+      return toast({ title: "Chave Pix copiada" });
+    }
+    await navigator.clipboard.writeText(pixPayload);
+    toast({ title: "Pix copia-e-cola copiado", description: "Cole no app do seu banco para pagar." });
   };
 
   const uploadProof = async (file: File) => {
