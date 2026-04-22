@@ -34,13 +34,21 @@ export type Brand = {
 };
 
 async function fetchBrand(): Promise<Brand | null> {
-  const { data } = await supabase
-    .from("brand_settings")
-    .select("*")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  return (data as unknown as Brand) ?? null;
+  // If user is authenticated (consultor or cliente), read full brand row directly.
+  const { data: sess } = await supabase.auth.getSession();
+  if (sess?.session) {
+    const { data } = await supabase
+      .from("brand_settings")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    return (data as unknown as Brand) ?? null;
+  }
+  // Anonymous visitors get only non-sensitive branding fields via secure RPC.
+  const { data } = await supabase.rpc("get_public_brand");
+  const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+  return (row as unknown as Brand) ?? null;
 }
 
 /**
