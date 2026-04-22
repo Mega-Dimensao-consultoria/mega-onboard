@@ -136,16 +136,58 @@ export default function AceiteProposta() {
       };
       await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
 
-      // 3. cria contrato pending_setup (RLS permite client_id = auth.uid())
-      const { error: cErr } = await supabase.from("contracts").insert([{
+      // 3. busca itens propostos pelo consultor
+      const { data: proposedItems } = await supabase
+        .from("lead_proposed_items")
+        .select("*")
+        .eq("lead_id", id!)
+        .order("sort_order");
+
+      const hasItems = (proposedItems?.length || 0) > 0;
+
+      // 4. cria contrato (active se já tem itens; pending_setup caso contrário)
+      const { data: contractRow, error: cErr } = await supabase.from("contracts").insert([{
         client_id: userId,
         lead_id: id,
-        status: "pending_setup",
+        status: hasItems ? "active" : "pending_setup",
         accepted_at: new Date().toISOString(),
-      }]);
+        started_at: hasItems ? new Date().toISOString() : null,
+      }]).select("id").single();
       if (cErr && !cErr.message.includes("duplicate")) throw cErr;
 
-      // 4. atualiza lead → status proposta_aceita (best effort; pode falhar por RLS se não logou)
+      // 5. copia os itens propostos para contract_items
+      if (hasItems && contractRow?.id) {
+        const today = new Date();
+        const itemsPayload = proposedItems!.map((p) => {
+          // calcula próximo billing baseado no ciclo
+          let nextBilling: string | null = null;
+          if (p.billing_cycle === "monthly") {
+            const d = new Date(today); d.setMonth(d.getMonth() + 1);
+            nextBilling = d.toISOString().slice(0, 10);
+          } else if (p.billing_cycle === "quarterly") {
+            const d = new Date(today); d.setMonth(d.getMonth() + 3);
+            nextBilling = d.toISOString().slice(0, 10);
+          } else if (p.billing_cycle === "yearly") {
+            const d = new Date(today); d.setFullYear(d.getFullYear() + 1);
+            nextBilling = d.toISOString().slice(0, 10);
+          } else if (p.billing_cycle === "one_time") {
+            nextBilling = today.toISOString().slice(0, 10);
+          }
+          return {
+            contract_id: contractRow.id,
+            product_id: p.product_id,
+            custom_name: p.custom_name,
+            custom_price_cents: p.custom_price_cents,
+            billing_cycle: p.billing_cycle,
+            quantity: p.quantity,
+            next_billing_at: nextBilling,
+            active: true,
+          };
+        });
+        await supabase.from("contract_items").insert(itemsPayload);
+      }
+
+      // 6. atualiza lead → status proposta_aceita
       await supabase.from("leads").update({ status: "proposta_aceita" }).eq("id", id);
 
       // 5. audit

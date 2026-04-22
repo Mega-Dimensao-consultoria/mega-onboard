@@ -6,8 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { BrandHeader } from "@/components/BrandHeader";
 import { useBrand } from "@/hooks/useBrand";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ArrowRight } from "lucide-react";
-import { fmtDateTime } from "@/lib/format";
+import { CheckCircle2, ArrowRight, Package } from "lucide-react";
+import { fmtDateTime, fmtMoney, cycleLabel } from "@/lib/format";
 
 type LeadPublic = {
   id: string;
@@ -18,11 +18,22 @@ type LeadPublic = {
   created_at: string;
 };
 
+type ProposedItem = {
+  id: string;
+  product_id: string | null;
+  custom_name: string | null;
+  custom_price_cents: number | null;
+  billing_cycle: string;
+  quantity: number;
+  products?: { name: string; price_cents: number } | null;
+};
+
 export default function PublicSolution() {
   const { id } = useParams();
   const { brand } = useBrand();
   const { user } = useAuth();
   const [lead, setLead] = useState<LeadPublic | null>(null);
+  const [items, setItems] = useState<ProposedItem[]>([]);
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,9 +50,15 @@ export default function PublicSolution() {
         setError("Solução não disponível.");
       } else {
         setLead(data as LeadPublic);
-        // já existe contrato vinculado?
-        const { data: c } = await supabase.from("contracts").select("id").eq("lead_id", id).maybeSingle();
+        const [{ data: c }, { data: its }] = await Promise.all([
+          supabase.from("contracts").select("id").eq("lead_id", id).maybeSingle(),
+          supabase.from("lead_proposed_items")
+            .select("id, product_id, custom_name, custom_price_cents, billing_cycle, quantity, products(name, price_cents)")
+            .eq("lead_id", id)
+            .order("sort_order"),
+        ]);
         setAccepted(!!c);
+        setItems((its as unknown as ProposedItem[]) || []);
       }
       setLoading(false);
     })();
@@ -97,6 +114,41 @@ export default function PublicSolution() {
             prose-li:text-foreground"
           dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
+
+        {items.length > 0 && (() => {
+          const lines = items.map((it) => {
+            const name = it.product_id ? (it.products?.name || "Item") : (it.custom_name || "Item");
+            const price = it.product_id ? (it.products?.price_cents || 0) : (it.custom_price_cents || 0);
+            return { name, price, cycle: it.billing_cycle, quantity: it.quantity, total: price * it.quantity };
+          });
+          const total = lines.reduce((s, l) => s + l.total, 0);
+          return (
+            <div className="mt-8 rounded-2xl border border-border/60 bg-card p-6 sm:p-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Package className="h-5 w-5 text-primary" />
+                <h2 className="font-display text-2xl">Investimento</h2>
+              </div>
+              <div className="space-y-3">
+                {lines.map((l, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 py-2 border-b border-border/40 last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium">{l.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {fmtMoney(l.price)} · {cycleLabel[l.cycle] || l.cycle}
+                        {l.quantity > 1 && ` · ${l.quantity}x`}
+                      </div>
+                    </div>
+                    <div className="font-semibold tabular-nums">{fmtMoney(l.total)}</div>
+                  </div>
+                ))}
+                <div className="flex justify-between items-center pt-3 border-t-2 border-primary/20">
+                  <span className="text-sm uppercase tracking-wider text-muted-foreground">Total</span>
+                  <span className="font-display text-3xl text-primary">{fmtMoney(total)}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="mt-8 rounded-2xl border border-border/60 bg-card p-6 sm:p-8 shadow-elegant">
           {accepted ? (

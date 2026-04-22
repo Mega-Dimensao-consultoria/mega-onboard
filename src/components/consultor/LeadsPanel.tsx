@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { generateBRD } from "@/lib/pdf";
 import type { Brand } from "@/hooks/useBrand";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { FileText, Inbox, Save, Download, MessageCircle, Eye, Loader2, Trash2 } from "lucide-react";
+import { ProposalItemsEditor } from "@/components/consultor/ProposalItemsEditor";
+import { FileText, Inbox, Save, Download, MessageCircle, Eye, Loader2, Trash2, Package } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { onlyDigits, waLink, fmtDateTime } from "@/lib/format";
 import {
@@ -245,6 +246,7 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
               <Tabs defaultValue="solution" className="w-full">
                 <TabsList>
                   <TabsTrigger value="solution">Solução técnica</TabsTrigger>
+                  <TabsTrigger value="proposal"><Package className="h-3.5 w-3.5 mr-1" />Proposta</TabsTrigger>
                   <TabsTrigger value="answers">Respostas do briefing</TabsTrigger>
                   <TabsTrigger value="share">Compartilhar</TabsTrigger>
                 </TabsList>
@@ -270,6 +272,10 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
                       <Eye className="h-4 w-4 mr-2" /> Pré-visualizar como cliente
                     </Button>
                   </div>
+                </TabsContent>
+
+                <TabsContent value="proposal" className="mt-4">
+                  <ProposalItemsEditor leadId={active.id} />
                 </TabsContent>
 
                 <TabsContent value="answers" className="mt-4">
