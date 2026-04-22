@@ -32,6 +32,9 @@
     --destructive: 0 70% 48%;
     --destructive-foreground: 0 0% 100%;
 
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 80% 12%;
+
     --border: 215 25% 88%;
     --input: 215 25% 90%;
     --ring: 222 60% 18%;

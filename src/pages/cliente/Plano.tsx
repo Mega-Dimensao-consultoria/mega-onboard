@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useClientId } from "@/hooks/useClientId";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ type Contract = { id: string };
 
 export default function Plano() {
   const { user } = useAuth();
+  const { clientId, isImpersonating } = useClientId();
   const [plans, setPlans] = useState<Product[]>([]);
   const [contract, setContract] = useState<Contract | null>(null);
   const [currentPlan, setCurrentPlan] = useState<ContractItem | null>(null);
@@ -21,10 +23,10 @@ export default function Plano() {
   const [switching, setSwitching] = useState<string | null>(null);
 
   const refresh = async () => {
-    if (!user) return;
+    if (!clientId) return;
     const [{ data: ps }, { data: c }] = await Promise.all([
       supabase.from("products").select("*").eq("active", true).eq("type", "plan").order("sort_order"),
-      supabase.from("contracts").select("id").eq("client_id", user.id).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("contracts").select("id").eq("client_id", clientId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
     setPlans((ps as Product[]) || []);
     if (c) {
@@ -39,9 +41,10 @@ export default function Plano() {
     setLoading(false);
   };
 
-  useEffect(() => { refresh(); }, [user]);
+  useEffect(() => { refresh(); }, [clientId]);
 
   const trocar = async (p: Product) => {
+    if (isImpersonating) return toast({ title: "Modo visualização", description: "Saia do modo visualização para realizar trocas.", variant: "destructive" });
     if (!contract) return;
     setSwitching(p.id);
     try {

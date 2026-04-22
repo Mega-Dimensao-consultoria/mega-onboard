@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useClientId } from "@/hooks/useClientId";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,22 +14,26 @@ type Invoice = { id: string; total_cents: number; status: string; due_date: stri
 
 export default function ClienteHome() {
   const { user } = useAuth();
+  const { clientId } = useClientId();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!clientId) return;
     (async () => {
-      const [{ data: cs }, { data: is }] = await Promise.all([
-        supabase.from("contracts").select("id, status, created_at").eq("client_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("invoices").select("id, total_cents, status, due_date").eq("client_id", user.id).order("due_date", { ascending: true }),
+      const [{ data: cs }, { data: is }, { data: prof }] = await Promise.all([
+        supabase.from("contracts").select("id, status, created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("invoices").select("id, total_cents, status, due_date").eq("client_id", clientId).order("due_date", { ascending: true }),
+        supabase.from("profiles").select("full_name, nome_fantasia").eq("id", clientId).maybeSingle(),
       ]);
       setContracts((cs as Contract[]) || []);
       setInvoices((is as Invoice[]) || []);
+      setProfileName(prof?.nome_fantasia || prof?.full_name || null);
       setLoading(false);
     })();
-  }, [user]);
+  }, [clientId]);
 
   const activeContracts = contracts.filter((c) => c.status === "active").length;
   const openInvoices = invoices.filter((i) => i.status === "open" || i.status === "overdue");
@@ -39,7 +44,7 @@ export default function ClienteHome() {
     <div className="space-y-6">
       <div>
         <div className="text-xs uppercase tracking-widest text-muted-foreground">Bem-vindo</div>
-        <h1 className="font-display text-4xl">{user?.user_metadata?.full_name || "Cliente"}</h1>
+        <h1 className="font-display text-4xl">{profileName || user?.user_metadata?.full_name || "Cliente"}</h1>
         <p className="text-muted-foreground mt-1">Acompanhe seus contratos, faturas e serviços contratados.</p>
       </div>
 

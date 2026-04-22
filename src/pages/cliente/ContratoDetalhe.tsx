@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useClientId } from "@/hooks/useClientId";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,13 +18,13 @@ type Contract = { id: string; status: string; accepted_at: string | null; create
 
 export default function ContratoDetalhe() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { clientId } = useClientId();
   const [contract, setContract] = useState<Contract | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !id) return;
+    if (!clientId || !id) return;
     (async () => {
       const [{ data: c }, { data: it }] = await Promise.all([
         supabase.from("contracts").select("*").eq("id", id).maybeSingle(),
@@ -34,7 +34,7 @@ export default function ContratoDetalhe() {
       setItems((it as Item[]) || []);
       setLoading(false);
     })();
-  }, [user, id]);
+  }, [clientId, id]);
 
   const itemPrice = (i: Item) => i.custom_price_cents ?? i.products?.price_cents ?? 0;
   const itemName = (i: Item) => i.custom_name || i.products?.name || "Item";

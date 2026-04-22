@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useClientId } from "@/hooks/useClientId";
 import { useBrand } from "@/hooks/useBrand";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fmtMoney, fmtDate, invoiceStatusLabel } from "@/lib/format";
-import { ArrowLeft, Copy, ExternalLink, Upload, CheckCircle2, QrCode } from "lucide-react";
+import { ArrowLeft, Copy, ExternalLink, CheckCircle2, QrCode } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type Invoice = {
@@ -22,7 +22,7 @@ type Item = { id: string; description: string; amount_cents: number; quantity: n
 
 export default function FaturaDetalhe() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { clientId, isImpersonating } = useClientId();
   const { brand } = useBrand();
   const [inv, setInv] = useState<Invoice | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -54,11 +54,12 @@ export default function FaturaDetalhe() {
   };
 
   const uploadProof = async (file: File) => {
-    if (!inv || !user) return;
+    if (!inv || !clientId) return;
+    if (isImpersonating) return toast({ title: "Modo visualização", description: "Saia do modo visualização para enviar comprovante.", variant: "destructive" });
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "pdf";
-      const path = `${user.id}/${inv.id}-${Date.now()}.${ext}`;
+      const path = `${clientId}/${inv.id}-${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("payment-proofs").upload(path, file, { upsert: true });
       if (error) throw error;
       const { data: signed } = await supabase.storage.from("payment-proofs").createSignedUrl(path, 60 * 60 * 24 * 365);

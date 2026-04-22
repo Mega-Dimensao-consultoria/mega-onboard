@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useClientId } from "@/hooks/useClientId";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,16 +14,16 @@ type Invoice = { id: string; total_cents: number; status: string; due_date: stri
 const variantFor = (s: string) => s === "paid" ? "default" : s === "overdue" ? "destructive" : "secondary";
 
 export default function Faturas() {
-  const { user } = useAuth();
+  const { clientId } = useClientId();
   const [items, setItems] = useState<Invoice[]>([]);
   const [filter, setFilter] = useState<"all" | "open" | "paid" | "overdue">("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    supabase.from("invoices").select("*").eq("client_id", user.id).order("due_date", { ascending: false })
+    if (!clientId) return;
+    supabase.from("invoices").select("*").eq("client_id", clientId).order("due_date", { ascending: false })
       .then(({ data }) => { setItems((data as Invoice[]) || []); setLoading(false); });
-  }, [user]);
+  }, [clientId]);
 
   const filtered = filter === "all" ? items : items.filter((i) => i.status === filter);
 
