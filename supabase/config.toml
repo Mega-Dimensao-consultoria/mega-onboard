@@ -15,3 +15,5 @@ project_id = "cmxczcpqfkrqhpssxyzo"
     verify_jwt = false
   [functions.generate-invoices]
     verify_jwt = false
+  [functions.get-client-ip]
+    verify_jwt = false
