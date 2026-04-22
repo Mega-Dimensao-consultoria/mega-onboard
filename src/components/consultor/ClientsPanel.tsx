@@ -249,11 +249,64 @@ export function ClientsPanel() {
                       </ul>
                     )}
                 </section>
+
+                {/* Zona de perigo */}
+                <section className="space-y-3 pt-4 border-t border-destructive/20">
+                  <h3 className="font-display text-lg text-destructive flex items-center gap-2">
+                    <Trash2 className="h-4 w-4" /> Zona de perigo
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Excluir o cliente remove permanentemente o perfil, contratos, faturas e acesso. Esta ação não pode ser desfeita.
+                  </p>
+                  <Button variant="destructive" className="w-full" onClick={() => { setConfirmDelete(selected); setDeleteConfirmText(""); }}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Excluir cliente permanentemente
+                  </Button>
+                </section>
               </div>
             </>
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => { if (!o) { setConfirmDelete(null); setDeleteConfirmText(""); } }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Excluir cliente permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Você está prestes a apagar <strong>{confirmDelete?.nome_fantasia || confirmDelete?.full_name || confirmDelete?.email}</strong> e
+                  todos os dados relacionados: contratos, itens, faturas, comprovantes e acesso.
+                </p>
+                <p>Esta ação é irreversível. Para confirmar, digite <strong>EXCLUIR</strong> abaixo.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Label htmlFor="confirm-del" className="text-xs">Digite EXCLUIR para confirmar</Label>
+            <Input
+              id="confirm-del"
+              autoFocus
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="EXCLUIR"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteClient}
+              disabled={deleting || deleteConfirmText !== "EXCLUIR"}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleting ? "Excluindo…" : "Excluir definitivamente"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
