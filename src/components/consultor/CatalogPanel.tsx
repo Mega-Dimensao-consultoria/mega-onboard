@@ -77,10 +77,18 @@ export function CatalogPanel() {
       toast({ title: "Dados inválidos", description: parsed.error.errors[0].message, variant: "destructive" });
       return;
     }
-    const payload = { ...parsed.data, active: form.active, sort_order: form.sort_order };
+    const payload = {
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      type: parsed.data.type,
+      billing_cycle: parsed.data.billing_cycle,
+      price_cents: parsed.data.price_cents,
+      active: form.active,
+      sort_order: form.sort_order,
+    };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
-      : await supabase.from("products").insert(payload);
+      : await supabase.from("products").insert([payload]);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
       return;
