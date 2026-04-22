@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { BrandHeader } from "@/components/BrandHeader";
-import type { Brand } from "@/hooks/useBrand";
-
-const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/consultor-api`;
+import { useBrand } from "@/hooks/useBrand";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, ArrowRight } from "lucide-react";
+import { fmtDateTime } from "@/lib/format";
 
 type LeadPublic = {
   id: string;
@@ -17,50 +20,48 @@ type LeadPublic = {
 
 export default function PublicSolution() {
   const { id } = useParams();
-  const [data, setData] = useState<{ lead: LeadPublic; brand: Brand | null } | null>(null);
+  const { brand } = useBrand();
+  const { user } = useAuth();
+  const [lead, setLead] = useState<LeadPublic | null>(null);
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    fetch(`${FN_URL}/public-solution`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      },
-      body: JSON.stringify({ id }),
-    })
-      .then(async (r) => {
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error || "Erro");
-        return j;
-      })
-      .then(setData)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    (async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("id, contact_name, solution_type, technical_solution, technical_solution_updated_at, created_at, status")
+        .eq("id", id)
+        .maybeSingle();
+      if (error || !data) {
+        setError("Solução não disponível.");
+      } else {
+        setLead(data as LeadPublic);
+        // já existe contrato vinculado?
+        const { data: c } = await supabase.from("contracts").select("id").eq("lead_id", id).maybeSingle();
+        setAccepted(!!c);
+      }
+      setLoading(false);
+    })();
   }, [id]);
 
-  useEffect(() => {
-    if (data?.brand?.primary_color) {
-      document.documentElement.style.setProperty("--primary", data.brand.primary_color);
-    }
-    document.title = "Solução Técnica · Briefing";
-  }, [data]);
+  useEffect(() => { document.title = "Solução Técnica · Briefing"; }, []);
 
   const safeHtml = useMemo(
     () =>
-      DOMPurify.sanitize(data?.lead?.technical_solution || "", {
+      DOMPurify.sanitize(lead?.technical_solution || "", {
         FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
         FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "formaction"],
       }),
-    [data?.lead?.technical_solution],
+    [lead?.technical_solution],
   );
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando…</div>;
   }
-  if (error || !data) {
+  if (error || !lead) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -71,7 +72,6 @@ export default function PublicSolution() {
     );
   }
 
-  const { lead, brand } = data;
   return (
     <div className="min-h-screen flex flex-col bg-secondary/20">
       <BrandHeader />
@@ -86,7 +86,7 @@ export default function PublicSolution() {
         </p>
         {lead.technical_solution_updated_at && (
           <p className="text-xs text-muted-foreground mt-1">
-            Atualizado em {new Date(lead.technical_solution_updated_at).toLocaleString("pt-BR")}
+            Atualizado em {fmtDateTime(lead.technical_solution_updated_at)}
           </p>
         )}
 
@@ -97,6 +97,37 @@ export default function PublicSolution() {
             prose-li:text-foreground"
           dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
+
+        <div className="mt-8 rounded-2xl border border-border/60 bg-card p-6 sm:p-8 shadow-elegant">
+          {accepted ? (
+            <div className="flex items-start gap-4">
+              <CheckCircle2 className="h-8 w-8 text-primary shrink-0" />
+              <div>
+                <h2 className="font-display text-xl">Proposta já aceita</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Esta proposta já foi formalizada. {user ? "Acesse sua área para acompanhar." : "Entre na sua conta para acompanhar contratos e faturas."}
+                </p>
+                <div className="mt-4">
+                  <Button asChild>
+                    <Link to={user ? "/cliente" : "/auth"}>Ir para área do cliente <ArrowRight className="h-4 w-4 ml-2" /></Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h2 className="font-display text-2xl">Pronto para começar?</h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Aceite a proposta para criar sua conta e começar a acompanhar contratos, faturas e projetos pela área do cliente.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Button asChild size="lg">
+                  <Link to={`/solucao/${lead.id}/aceite`}>Aceitar proposta <ArrowRight className="h-4 w-4 ml-2" /></Link>
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
       </main>
     </div>
   );
