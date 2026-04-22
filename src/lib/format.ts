@@ -13,10 +13,40 @@ export const fmtDateTime = (d: string | Date | null | undefined) => {
 
 export const onlyDigits = (s: string | null | undefined) => (s || "").replace(/\D/g, "");
 
-export function waLink(phone: string | null | undefined, message: string) {
+export function waLink(phone: string | null | undefined, message: string): string | null {
   const num = onlyDigits(phone);
+  if (!num) return null;
   const withCountry = num.length <= 11 ? `55${num}` : num;
   return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
+}
+
+// Mensagens prontas para faturas — abre o WhatsApp com texto pré-preenchido.
+type InvoiceMsg = {
+  clientName?: string | null;
+  amountCents: number;
+  dueDate: string | Date;
+  invoiceUrl: string;
+  brandName?: string | null;
+};
+
+export function buildInvoiceCreatedMessage(i: InvoiceMsg): string {
+  const name = i.clientName?.split(" ")[0] || "olá";
+  const brand = i.brandName ? ` da ${i.brandName}` : "";
+  return `Oi ${name}! Sua nova fatura${brand} no valor de ${fmtMoney(i.amountCents)} já está disponível. Vencimento: ${fmtDate(i.dueDate)}. Acesse: ${i.invoiceUrl}`;
+}
+
+export function buildInvoiceReminderMessage(i: InvoiceMsg & { overdue?: boolean }): string {
+  const name = i.clientName?.split(" ")[0] || "olá";
+  if (i.overdue) {
+    return `Oi ${name}, identificamos que sua fatura de ${fmtMoney(i.amountCents)} venceu em ${fmtDate(i.dueDate)}. Por favor regularize: ${i.invoiceUrl}`;
+  }
+  return `Oi ${name}! Lembrete: sua fatura de ${fmtMoney(i.amountCents)} vence em ${fmtDate(i.dueDate)}. Acesse: ${i.invoiceUrl}`;
+}
+
+export function buildInvoicePaidMessage(i: Omit<InvoiceMsg, "dueDate"> & { paidAt: string | Date; method?: string }): string {
+  const name = i.clientName?.split(" ")[0] || "olá";
+  const m = i.method ? ` via ${i.method}` : "";
+  return `Oi ${name}! Confirmamos o recebimento de ${fmtMoney(i.amountCents)}${m} em ${fmtDate(i.paidAt)}. Obrigado! ${i.invoiceUrl}`;
 }
 
 export const cycleLabel: Record<string, string> = {
