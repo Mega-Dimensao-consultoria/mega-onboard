@@ -31,10 +31,10 @@ export function ClienteLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-secondary/30">
       {isImpersonating && (
-        <div className="bg-amber-500 text-amber-950 px-4 py-2 text-sm flex items-center justify-center gap-3 flex-wrap">
+        <div className="bg-warning text-warning-foreground px-4 py-2 text-sm flex items-center justify-center gap-3 flex-wrap">
           <Eye className="h-4 w-4" />
           <span>Modo visualização — você está vendo a área como <strong>{impersonatedName || "o cliente"}</strong>. Alterações são desencorajadas.</span>
-          <Button size="sm" variant="outline" className="h-7 bg-white/90 hover:bg-white" onClick={exitImpersonate}>
+          <Button size="sm" variant="outline" className="h-7" onClick={exitImpersonate}>
             <X className="h-3 w-3 mr-1" /> Sair do modo visualização
           </Button>
         </div>
