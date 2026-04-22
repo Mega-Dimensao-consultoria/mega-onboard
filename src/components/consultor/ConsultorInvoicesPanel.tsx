@@ -43,12 +43,31 @@ export function ConsultorInvoicesPanel() {
   const variantFor = (s: string) => s === "paid" ? "default" : s === "overdue" ? "destructive" : "secondary";
 
   const markPaid = async (i: Invoice, method: string) => {
+    const paidAt = new Date().toISOString();
     await supabase.from("invoices").update({
-      status: "paid", payment_method: method, paid_at: new Date().toISOString(),
+      status: "paid", payment_method: method, paid_at: paidAt,
     }).eq("id", i.id);
     await supabase.from("audit_log").insert([{
       action: "mark_invoice_paid", target_type: "invoice", target_id: i.id, metadata: { method },
     }]);
+    // Email de confirmação (best-effort)
+    const prof = profiles[i.client_id];
+    if (prof?.email) {
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "invoice-paid",
+          recipientEmail: prof.email,
+          idempotencyKey: `invoice-paid-${i.id}`,
+          templateData: {
+            name: prof.full_name,
+            amount: fmtMoney(i.total_cents),
+            paidAt: fmtDate(paidAt),
+            method: method === "pix" ? "Pix" : method === "paypal" ? "PayPal" : "Manual",
+            invoiceUrl: `${window.location.origin}/cliente/faturas/${i.id}`,
+          },
+        },
+      }).catch(() => {});
+    }
     toast({ title: "Fatura confirmada" });
     refresh();
     setActive(null);
