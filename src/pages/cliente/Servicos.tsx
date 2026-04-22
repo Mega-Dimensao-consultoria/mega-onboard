@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useClientId } from "@/hooks/useClientId";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,25 +14,27 @@ type Contract = { id: string; status: string };
 
 export default function Servicos() {
   const { user } = useAuth();
+  const { clientId, isImpersonating } = useClientId();
   const [products, setProducts] = useState<Product[]>([]);
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!clientId) return;
     (async () => {
       const [{ data: p }, { data: c }] = await Promise.all([
         supabase.from("products").select("*").eq("active", true).in("type", ["service", "addon"]).order("sort_order"),
-        supabase.from("contracts").select("id, status").eq("client_id", user.id).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("contracts").select("id, status").eq("client_id", clientId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       setProducts((p as Product[]) || []);
       setContract(c as Contract);
       setLoading(false);
     })();
-  }, [user]);
+  }, [clientId]);
 
   const contratar = async (p: Product) => {
+    if (isImpersonating) return toast({ title: "Modo visualização", description: "Você está vendo a área como o cliente. Saia do modo para realizar ações.", variant: "destructive" });
     if (!contract) return toast({ title: "Você ainda não tem contrato ativo", description: "Aguarde o consultor configurar seu plano.", variant: "destructive" });
     setAdding(p.id);
     try {

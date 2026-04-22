@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useClientId } from "@/hooks/useClientId";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,15 +11,15 @@ import { FileText, ArrowRight } from "lucide-react";
 type Contract = { id: string; status: string; created_at: string; accepted_at: string | null; notes: string | null };
 
 export default function Contratos() {
-  const { user } = useAuth();
+  const { clientId } = useClientId();
   const [items, setItems] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    supabase.from("contracts").select("*").eq("client_id", user.id).order("created_at", { ascending: false })
+    if (!clientId) return;
+    supabase.from("contracts").select("*").eq("client_id", clientId).order("created_at", { ascending: false })
       .then(({ data }) => { setItems((data as Contract[]) || []); setLoading(false); });
-  }, [user]);
+  }, [clientId]);
 
   return (
     <div className="space-y-6">
