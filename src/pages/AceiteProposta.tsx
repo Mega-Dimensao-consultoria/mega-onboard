@@ -157,6 +157,17 @@ export default function AceiteProposta() {
         metadata: { doc_type: docType },
       }]);
 
+      // 6. dispara email de confirmação (best-effort)
+      const recipientName = docType === "cpf" ? fullName : (nomeFantasia || razaoSocial);
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "proposal-accepted",
+          recipientEmail: email,
+          idempotencyKey: `proposal-accepted-${id}`,
+          templateData: { name: recipientName, portalUrl: `${window.location.origin}/cliente` },
+        },
+      }).catch(() => { /* silencioso */ });
+
       setDone(true);
     } catch (e) {
       toast({ title: "Erro ao finalizar", description: e instanceof Error ? e.message : "", variant: "destructive" });
