@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useClientId } from "@/hooks/useClientId";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,30 +16,34 @@ const schema = z.object({
 
 export default function Perfil() {
   const { user } = useAuth();
+  const { clientId, isImpersonating } = useClientId();
   const [fullName, setFullName] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    supabase.from("profiles").select("full_name,telefone").eq("id", user.id).maybeSingle().then(({ data }) => {
+    if (!clientId) return;
+    supabase.from("profiles").select("full_name,telefone,email").eq("id", clientId).maybeSingle().then(({ data }) => {
       setFullName(data?.full_name || "");
       setTelefone(data?.telefone || "");
+      setEmail(data?.email || (clientId === user?.id ? user?.email || "" : ""));
       setLoading(false);
     });
-  }, [user]);
+  }, [clientId, user]);
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!clientId) return;
+    if (isImpersonating) return toast({ title: "Modo visualização", description: "Saia do modo visualização para editar.", variant: "destructive" });
     const parsed = schema.safeParse({ full_name: fullName, telefone });
     if (!parsed.success) {
       toast({ title: "Dados inválidos", description: parsed.error.errors[0].message, variant: "destructive" });
       return;
     }
     setBusy(true);
-    const { error } = await supabase.from("profiles").update({ full_name: fullName, telefone }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ full_name: fullName, telefone }).eq("id", clientId);
     setBusy(false);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else toast({ title: "Perfil atualizado" });
@@ -58,7 +63,7 @@ export default function Perfil() {
           <form onSubmit={save} className="space-y-4">
             <div>
               <Label>Email</Label>
-              <Input value={user?.email || ""} disabled />
+              <Input value={email} disabled />
             </div>
             <div>
               <Label htmlFor="fn">Nome completo</Label>
