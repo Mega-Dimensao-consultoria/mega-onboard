@@ -6,8 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Consultor from "./pages/Consultor.tsx";
-import ConsultorLogin from "./pages/ConsultorLogin.tsx";
 import PublicSolution from "./pages/PublicSolution.tsx";
+import AceiteProposta from "./pages/AceiteProposta.tsx";
 import Auth from "./pages/Auth.tsx";
 import { RequireAuth } from "@/components/RequireAuth";
 import { ClienteLayout } from "@/components/cliente/ClienteLayout";
@@ -26,9 +26,11 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/consultor" element={<Consultor />} />
-          <Route path="/consultor/login" element={<ConsultorLogin />} />
+          <Route path="/consultor" element={<RequireAuth role="consultor"><Consultor /></RequireAuth>} />
           <Route path="/solucao/:id" element={<PublicSolution />} />
+          <Route path="/solucao/:id/aceite" element={<AceiteProposta />} />
+
+          <Route path="/cliente/contratos/:id" element={<RequireAuth role="cliente"><ClienteLayout /></RequireAuth>}></Route>
 
           <Route path="/cliente" element={<RequireAuth role="cliente"><ClienteLayout /></RequireAuth>}>
             <Route index element={<ClienteHome />} />
