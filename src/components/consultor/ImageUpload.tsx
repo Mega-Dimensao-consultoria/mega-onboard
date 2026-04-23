@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Upload, Trash2, Loader2 } from "lucide-react";
+
+type ImageMeta = { width: number; height: number; bytes: number | null };
 
 const BUCKET = "brand-assets";
 const MAX_SIZE_MB = 5;
@@ -43,6 +45,34 @@ export function ImageUpload({
   previewClassName?: string;
 }) {
   const [busy, setBusy] = useState(false);
+  const [meta, setMeta] = useState<ImageMeta | null>(null);
+
+  // Load metadata when value changes (existing image)
+  useEffect(() => {
+    if (!value) {
+      setMeta(null);
+      return;
+    }
+    let cancelled = false;
+    const img = new Image();
+    img.onload = async () => {
+      if (cancelled) return;
+      let bytes: number | null = null;
+      try {
+        const head = await fetch(value, { method: "HEAD" });
+        const len = head.headers.get("content-length");
+        if (len) bytes = parseInt(len, 10);
+      } catch {
+        // ignore
+      }
+      if (!cancelled) setMeta({ width: img.naturalWidth, height: img.naturalHeight, bytes });
+    };
+    img.onerror = () => !cancelled && setMeta(null);
+    img.src = value;
+    return () => {
+      cancelled = true;
+    };
+  }, [value]);
 
   const upload = async (file: File) => {
     // Validate type
@@ -88,6 +118,9 @@ export function ImageUpload({
       }
 
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      // Capture dimensions immediately from the uploaded file
+      const dims = await readImageDimensions(file);
+      setMeta({ width: dims?.width ?? 0, height: dims?.height ?? 0, bytes: file.size });
       onChange(data.publicUrl);
       toast({ title: "Imagem enviada" });
     } catch (e) {
@@ -138,7 +171,33 @@ export function ImageUpload({
       <p className="text-[11px] text-muted-foreground mt-1">
         {ALLOWED_LABEL} · até {MAX_SIZE_MB} MB
       </p>
-      {value && <img src={value} alt="" className={previewClassName} />}
+      {value && (
+        <>
+          <img src={value} alt="" className={previewClassName} />
+          {meta && (
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {meta.width > 0 && meta.height > 0 ? `${meta.width} × ${meta.height} px` : "—"}
+              {meta.bytes != null && <> · {formatBytes(meta.bytes)}</>}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
+}
+
+async function readImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
 }
