@@ -165,6 +165,7 @@ export default function Auth() {
             </TabsContent>
           </Tabs>
         </div>
+        </div>
       </main>
     </div>
   );
