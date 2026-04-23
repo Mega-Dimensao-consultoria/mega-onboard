@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Upload } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import { ImageUpload } from "./ImageUpload";
+import { HslColorPicker } from "./HslColorPicker";
 
 const GOOGLE_FONTS = [
   "Inter", "Poppins", "Montserrat", "Roboto", "Open Sans", "Lato", "Nunito",
@@ -24,7 +26,6 @@ export function ContentPanel({ brand, onSaved }: { brand: Brand | null; onSaved:
     Array.isArray(brand?.nav_links) ? brand!.nav_links! : []
   );
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState<string | null>(null);
 
   useEffect(() => {
     if (brand) {
@@ -48,23 +49,6 @@ export function ContentPanel({ brand, onSaved }: { brand: Brand | null; onSaved:
       toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const uploadFile = async (file: File, field: keyof Brand) => {
-    setUploading(field as string);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `${field}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("brand-assets").upload(path, file, { upsert: true });
-      if (upErr) throw upErr;
-      const { data } = supabase.storage.from("brand-assets").getPublicUrl(path);
-      setB((prev) => ({ ...prev, [field]: data.publicUrl }));
-      toast({ title: "Imagem enviada" });
-    } catch (e) {
-      toast({ title: "Erro no upload", description: e instanceof Error ? e.message : "", variant: "destructive" });
-    } finally {
-      setUploading(null);
     }
   };
 
@@ -107,21 +91,12 @@ export function ContentPanel({ brand, onSaved }: { brand: Brand | null; onSaved:
           <Label>CTA "área do cliente"</Label>
           <Input value={b.client_login_cta || ""} onChange={(e) => setB({ ...b, client_login_cta: e.target.value })} placeholder="Acesse sua área do cliente" />
         </div>
-        <div>
-          <Label>Imagem de fundo do hero</Label>
-          <div className="flex items-center gap-2 mt-1">
-            <Input value={b.hero_background_url || ""} onChange={(e) => setB({ ...b, hero_background_url: e.target.value })} placeholder="https://..." />
-            <Button type="button" variant="outline" size="icon" disabled={uploading === "hero_background_url"} asChild>
-              <label className="cursor-pointer">
-                <Upload className="h-4 w-4" />
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "hero_background_url")} />
-              </label>
-            </Button>
-          </div>
-          {b.hero_background_url && (
-            <img src={b.hero_background_url} alt="" className="mt-2 h-24 w-full object-cover rounded-lg" />
-          )}
-        </div>
+        <ImageUpload
+          label="Imagem de fundo do hero"
+          field="hero-bg"
+          value={b.hero_background_url}
+          onChange={(url) => setB({ ...b, hero_background_url: url })}
+        />
         <div>
           <Label>Opacidade do overlay (0 a 1)</Label>
           <Input type="number" min={0} max={1} step={0.05} value={b.hero_overlay_opacity ?? 0.5} onChange={(e) => setB({ ...b, hero_overlay_opacity: parseFloat(e.target.value) })} />
@@ -190,20 +165,20 @@ export function ContentPanel({ brand, onSaved }: { brand: Brand | null; onSaved:
           <p className="text-xs text-muted-foreground mt-1">Use formato HSL: ex. <code>210 65% 24%</code></p>
         </div>
         <div>
-          <Label>Secondary (HSL)</Label>
-          <Input value={b.secondary_color || ""} onChange={(e) => setB({ ...b, secondary_color: e.target.value })} placeholder="210 40% 96%" />
+          <Label>Secondary</Label>
+          <HslColorPicker value={b.secondary_color} onChange={(v) => setB({ ...b, secondary_color: v })} placeholder="210 40% 96%" />
         </div>
         <div>
-          <Label>Accent (HSL)</Label>
-          <Input value={b.accent_color || ""} onChange={(e) => setB({ ...b, accent_color: e.target.value })} placeholder="142 70% 45%" />
+          <Label>Accent</Label>
+          <HslColorPicker value={b.accent_color} onChange={(v) => setB({ ...b, accent_color: v })} placeholder="142 70% 45%" />
         </div>
         <div>
-          <Label>Background (HSL)</Label>
-          <Input value={b.background_color || ""} onChange={(e) => setB({ ...b, background_color: e.target.value })} placeholder="0 0% 100%" />
+          <Label>Background</Label>
+          <HslColorPicker value={b.background_color} onChange={(v) => setB({ ...b, background_color: v })} placeholder="0 0% 100%" />
         </div>
         <div>
-          <Label>Foreground (HSL)</Label>
-          <Input value={b.foreground_color || ""} onChange={(e) => setB({ ...b, foreground_color: e.target.value })} placeholder="222 47% 11%" />
+          <Label>Foreground</Label>
+          <HslColorPicker value={b.foreground_color} onChange={(v) => setB({ ...b, foreground_color: v })} placeholder="222 47% 11%" />
         </div>
       </div>
 
@@ -222,22 +197,15 @@ export function ContentPanel({ brand, onSaved }: { brand: Brand | null; onSaved:
           <Input value={b.auth_subtitle || ""} onChange={(e) => setB({ ...b, auth_subtitle: e.target.value })} placeholder="Acesso" />
         </div>
         <div>
-          <Label>Cor de destaque (HSL)</Label>
-          <Input value={b.auth_accent_color || ""} onChange={(e) => setB({ ...b, auth_accent_color: e.target.value })} placeholder="210 65% 24%" />
+          <Label>Cor de destaque</Label>
+          <HslColorPicker value={b.auth_accent_color} onChange={(v) => setB({ ...b, auth_accent_color: v })} placeholder="210 65% 24%" />
         </div>
-        <div>
-          <Label>Imagem lateral</Label>
-          <div className="flex items-center gap-2 mt-1">
-            <Input value={b.auth_image_url || ""} onChange={(e) => setB({ ...b, auth_image_url: e.target.value })} placeholder="https://..." />
-            <Button type="button" variant="outline" size="icon" disabled={uploading === "auth_image_url"} asChild>
-              <label className="cursor-pointer">
-                <Upload className="h-4 w-4" />
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0], "auth_image_url")} />
-              </label>
-            </Button>
-          </div>
-          {b.auth_image_url && <img src={b.auth_image_url} alt="" className="mt-2 h-24 w-full object-cover rounded-lg" />}
-        </div>
+        <ImageUpload
+          label="Imagem lateral"
+          field="auth-image"
+          value={b.auth_image_url}
+          onChange={(url) => setB({ ...b, auth_image_url: url })}
+        />
       </div>
 
       {/* Proposta */}
@@ -259,8 +227,8 @@ export function ContentPanel({ brand, onSaved }: { brand: Brand | null; onSaved:
           <Textarea rows={2} value={b.proposal_after_accept || ""} onChange={(e) => setB({ ...b, proposal_after_accept: e.target.value })} placeholder="Esta proposta já foi formalizada..." />
         </div>
         <div>
-          <Label>Cor de destaque (HSL)</Label>
-          <Input value={b.proposal_accent_color || ""} onChange={(e) => setB({ ...b, proposal_accent_color: e.target.value })} placeholder="210 65% 24%" />
+          <Label>Cor de destaque</Label>
+          <HslColorPicker value={b.proposal_accent_color} onChange={(v) => setB({ ...b, proposal_accent_color: v })} placeholder="210 65% 24%" />
         </div>
       </div>
 
