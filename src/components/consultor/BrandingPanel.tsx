@@ -120,6 +120,7 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
           <ImageUpload
             label="Logo"
             field="logo"
+            recommended="Horizontal, ~400 × 120 px (PNG/SVG com fundo transparente)"
             value={b.logo_url}
             onChange={(url) => setB((p) => ({ ...p, logo_url: url }))}
             previewClassName="mt-2 h-16 w-auto object-contain rounded border border-border p-1 bg-secondary/30"

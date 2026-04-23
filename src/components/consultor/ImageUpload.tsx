@@ -35,6 +35,7 @@ export function ImageUpload({
   onChange,
   field,
   label,
+  recommended,
   previewClassName = "mt-2 h-24 w-full object-cover rounded-lg border border-border",
 }: {
   value: string | null | undefined;
@@ -42,6 +43,8 @@ export function ImageUpload({
   /** Used as filename prefix to keep storage organized */
   field: string;
   label?: string;
+  /** Free-form recommended size hint, e.g. "1920 × 1080 px" or "Quadrada, 512 × 512 px" */
+  recommended?: string;
   previewClassName?: string;
 }) {
   const [busy, setBusy] = useState(false);
@@ -168,9 +171,19 @@ export function ImageUpload({
           </Button>
         )}
       </div>
-      <p className="text-[11px] text-muted-foreground mt-1">
-        {ALLOWED_LABEL} · até {MAX_SIZE_MB} MB
-      </p>
+      <div className="mt-1 space-y-0.5">
+        <p className="text-[11px] text-muted-foreground">
+          <span className="font-medium text-foreground/80">Formatos:</span> {ALLOWED_LABEL}
+        </p>
+        <p className="text-[11px] text-muted-foreground">
+          <span className="font-medium text-foreground/80">Tamanho máx.:</span> {MAX_SIZE_MB} MB
+        </p>
+        {recommended && (
+          <p className="text-[11px] text-muted-foreground">
+            <span className="font-medium text-foreground/80">Dimensões recomendadas:</span> {recommended}
+          </p>
+        )}
+      </div>
       {value && (
         <>
           <img src={value} alt="" className={previewClassName} />
