@@ -172,6 +172,14 @@ export default function AceiteProposta() {
       }
 
       // 2. salva profile (RLS permite owner ou consultor)
+      const enderecoConcat = [
+        [logradouro, numero].filter(Boolean).join(", "),
+        complemento,
+        bairro,
+        [cidade, estado].filter(Boolean).join("/"),
+        cep,
+      ].filter((p) => p && p.trim().length > 0).join(" · ") || endereco;
+
       const profilePayload = {
         id: userId,
         full_name: docType === "cpf" ? fullName : (nomeFantasia || razaoSocial),
@@ -179,7 +187,14 @@ export default function AceiteProposta() {
         doc_number: onlyDigits(docNumber),
         razao_social: docType === "cnpj" ? razaoSocial : null,
         nome_fantasia: docType === "cnpj" ? nomeFantasia : null,
-        endereco: endereco || null,
+        endereco: enderecoConcat || null,
+        cep: onlyDigits(cep) || null,
+        logradouro: logradouro || null,
+        numero: numero || null,
+        complemento: complemento || null,
+        bairro: bairro || null,
+        cidade: cidade || null,
+        estado: estado || null,
         telefone: celular || telefone,
         email,
       };
