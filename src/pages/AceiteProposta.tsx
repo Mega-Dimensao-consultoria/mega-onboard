@@ -94,6 +94,7 @@ export default function AceiteProposta() {
       toast({ title: "Dados preenchidos automaticamente" });
     } catch (e) {
       toast({ title: "Não encontramos esse CNPJ", description: e instanceof Error ? e.message : "Tente novamente em instantes.", variant: "destructive" });
+    } finally { setSearchingCnpj(false); }
   };
 
   const onCepChange = async (v: string) => {
