@@ -9,10 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { onlyDigits } from "@/lib/format";
+import { maskCEP, fetchCep } from "@/lib/masks";
 import { generateContractPdf, htmlToPlainText } from "@/lib/contractPdf";
 import { ArrowLeft, ArrowRight, Loader2, CheckCircle2, Search, Building2, User2 } from "lucide-react";
+
+const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
 type DocType = "cpf" | "cnpj";
 
