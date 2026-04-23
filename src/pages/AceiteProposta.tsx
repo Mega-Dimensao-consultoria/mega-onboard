@@ -9,10 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { onlyDigits } from "@/lib/format";
+import { maskCEP, fetchCep } from "@/lib/masks";
 import { generateContractPdf, htmlToPlainText } from "@/lib/contractPdf";
 import { ArrowLeft, ArrowRight, Loader2, CheckCircle2, Search, Building2, User2 } from "lucide-react";
+
+const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
 type DocType = "cpf" | "cnpj";
 
@@ -37,7 +41,15 @@ export default function AceiteProposta() {
   const [fullName, setFullName] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
-  const [endereco, setEndereco] = useState("");
+  const [endereco, setEndereco] = useState(""); // legado concatenado, mantido para compatibilidade
+  const [cep, setCep] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
   const [telefone, setTelefone] = useState("");
   const [emailContato, setEmailContato] = useState("");
 
@@ -69,6 +81,13 @@ export default function AceiteProposta() {
       const d = await res.json();
       setRazaoSocial(d.razao_social || "");
       setNomeFantasia(d.nome_fantasia || "");
+      if (d.cep) setCep(maskCEP(String(d.cep)));
+      if (d.logradouro) setLogradouro(d.logradouro);
+      if (d.numero) setNumero(String(d.numero));
+      if (d.complemento) setComplemento(d.complemento);
+      if (d.bairro) setBairro(d.bairro);
+      if (d.municipio) setCidade(d.municipio);
+      if (d.uf) setEstado(d.uf);
       setEndereco([d.logradouro, d.numero, d.bairro, d.municipio, d.uf, d.cep].filter(Boolean).join(", "));
       if (d.ddd_telefone_1) setTelefone(d.ddd_telefone_1);
       if (d.email) setEmailContato(d.email);
@@ -76,6 +95,26 @@ export default function AceiteProposta() {
     } catch (e) {
       toast({ title: "Não encontramos esse CNPJ", description: e instanceof Error ? e.message : "Tente novamente em instantes.", variant: "destructive" });
     } finally { setSearchingCnpj(false); }
+  };
+
+  const onCepChange = async (v: string) => {
+    const masked = maskCEP(v);
+    setCep(masked);
+    if (onlyDigits(masked).length === 8) {
+      setCepLoading(true);
+      const r = await fetchCep(masked);
+      setCepLoading(false);
+      if (r) {
+        if (r.logradouro) setLogradouro(r.logradouro);
+        if (r.bairro) setBairro(r.bairro);
+        if (r.localidade) setCidade(r.localidade);
+        if (r.uf) setEstado(r.uf);
+        if (!complemento && r.complemento) setComplemento(r.complemento);
+        toast({ title: "Endereço encontrado", description: `${r.localidade}/${r.uf}` });
+      } else {
+        toast({ title: "CEP não encontrado", description: "Preencha o endereço manualmente.", variant: "destructive" });
+      }
+    }
   };
 
   const validateStep1 = () => {
@@ -133,6 +172,14 @@ export default function AceiteProposta() {
       }
 
       // 2. salva profile (RLS permite owner ou consultor)
+      const enderecoConcat = [
+        [logradouro, numero].filter(Boolean).join(", "),
+        complemento,
+        bairro,
+        [cidade, estado].filter(Boolean).join("/"),
+        cep,
+      ].filter((p) => p && p.trim().length > 0).join(" · ") || endereco;
+
       const profilePayload = {
         id: userId,
         full_name: docType === "cpf" ? fullName : (nomeFantasia || razaoSocial),
@@ -140,7 +187,14 @@ export default function AceiteProposta() {
         doc_number: onlyDigits(docNumber),
         razao_social: docType === "cnpj" ? razaoSocial : null,
         nome_fantasia: docType === "cnpj" ? nomeFantasia : null,
-        endereco: endereco || null,
+        endereco: enderecoConcat || null,
+        cep: onlyDigits(cep) || null,
+        logradouro: logradouro || null,
+        numero: numero || null,
+        complemento: complemento || null,
+        bairro: bairro || null,
+        cidade: cidade || null,
+        estado: estado || null,
         telefone: celular || telefone,
         email,
       };
@@ -373,9 +427,62 @@ export default function AceiteProposta() {
                 </div>
               )}
 
-              <div>
-                <Label>Endereço</Label>
-                <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade — UF" />
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-foreground/80">Endereço</div>
+
+                <div className="grid sm:grid-cols-[180px_1fr] gap-3">
+                  <div>
+                    <Label>CEP</Label>
+                    <div className="relative">
+                      <Input
+                        value={cep}
+                        onChange={(e) => onCepChange(e.target.value)}
+                        placeholder="00000-000"
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                      />
+                      {cepLoading && (
+                        <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Logradouro</Label>
+                    <Input value={logradouro} onChange={(e) => setLogradouro(e.target.value)} placeholder="Rua, avenida..." autoComplete="address-line1" />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-[140px_1fr] gap-3">
+                  <div>
+                    <Label>Número</Label>
+                    <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="123" autoComplete="address-line2" />
+                  </div>
+                  <div>
+                    <Label>Complemento</Label>
+                    <Input value={complemento} onChange={(e) => setComplemento(e.target.value)} placeholder="Apto, sala, referência..." />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Bairro</Label>
+                  <Input value={bairro} onChange={(e) => setBairro(e.target.value)} autoComplete="address-level3" />
+                </div>
+
+                <div className="grid sm:grid-cols-[1fr_120px] gap-3">
+                  <div>
+                    <Label>Cidade</Label>
+                    <Input value={cidade} onChange={(e) => setCidade(e.target.value)} autoComplete="address-level2" />
+                  </div>
+                  <div>
+                    <Label>UF</Label>
+                    <Select value={estado} onValueChange={setEstado}>
+                      <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                      <SelectContent>
+                        {UFS.map((uf) => <SelectItem key={uf} value={uf}>{uf}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-3">
