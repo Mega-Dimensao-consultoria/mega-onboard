@@ -5,6 +5,10 @@ import { toast } from "@/hooks/use-toast";
 import { Upload, Trash2, Loader2 } from "lucide-react";
 
 const BUCKET = "brand-assets";
+const MAX_SIZE_MB = 5;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+const ALLOWED_LABEL = "JPG, PNG, WEBP, GIF ou SVG";
 
 /**
  * Extracts the storage path from a public URL of the brand-assets bucket.
@@ -16,6 +20,12 @@ function pathFromPublicUrl(url: string | null | undefined): string | null {
   const idx = url.indexOf(marker);
   if (idx === -1) return null;
   return decodeURIComponent(url.substring(idx + marker.length));
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
 export function ImageUpload({
@@ -35,6 +45,33 @@ export function ImageUpload({
   const [busy, setBusy] = useState(false);
 
   const upload = async (file: File) => {
+    // Validate type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({
+        title: "Tipo de arquivo inválido",
+        description: `Envie uma imagem (${ALLOWED_LABEL}). Você enviou: ${file.type || "tipo desconhecido"}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    // Validate size
+    if (file.size > MAX_SIZE_BYTES) {
+      toast({
+        title: "Arquivo muito grande",
+        description: `O limite é ${MAX_SIZE_MB} MB. O arquivo enviado tem ${formatBytes(file.size)}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (file.size === 0) {
+      toast({
+        title: "Arquivo vazio",
+        description: "O arquivo selecionado está vazio.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setBusy(true);
     try {
       const ext = (file.name.split(".").pop() || "png").toLowerCase();
@@ -82,9 +119,13 @@ export function ImageUpload({
             {value ? "Trocar imagem" : "Enviar imagem"}
             <input
               type="file"
-              accept="image/*"
+              accept={ALLOWED_TYPES.join(",")}
               className="hidden"
-              onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) upload(f);
+                e.target.value = ""; // allow re-selecting same file
+              }}
             />
           </label>
         </Button>
@@ -94,6 +135,9 @@ export function ImageUpload({
           </Button>
         )}
       </div>
+      <p className="text-[11px] text-muted-foreground mt-1">
+        {ALLOWED_LABEL} · até {MAX_SIZE_MB} MB
+      </p>
       {value && <img src={value} alt="" className={previewClassName} />}
     </div>
   );
