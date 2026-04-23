@@ -94,6 +94,7 @@ export function ContentPanel({ brand, onSaved }: { brand: Brand | null; onSaved:
         <ImageUpload
           label="Imagem de fundo do hero"
           field="hero-bg"
+          recommended="Paisagem, 1920 × 1080 px (16:9)"
           value={b.hero_background_url}
           onChange={(url) => setB({ ...b, hero_background_url: url })}
         />
@@ -203,6 +204,7 @@ export function ContentPanel({ brand, onSaved }: { brand: Brand | null; onSaved:
         <ImageUpload
           label="Imagem lateral"
           field="auth-image"
+          recommended="Vertical, 1000 × 1400 px (proporção ~5:7)"
           value={b.auth_image_url}
           onChange={(url) => setB({ ...b, auth_image_url: url })}
         />
