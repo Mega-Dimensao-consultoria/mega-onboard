@@ -403,6 +403,7 @@ export default function AceiteProposta() {
   };
 
   if (done) {
+    const hasInvoice = !!createdInvoiceId;
     return (
       <div className="min-h-screen flex flex-col">
         <BrandHeader />
@@ -413,11 +414,20 @@ export default function AceiteProposta() {
             </div>
             <h1 className="font-display text-3xl">Proposta aceita!</h1>
             <p className="text-muted-foreground mt-2">
-              Sua conta está pronta. Em instantes nosso consultor vai configurar seu plano e suas primeiras faturas aparecerão na sua área.
+              {hasInvoice
+                ? "Sua conta está pronta e sua primeira fatura já está disponível. Para iniciar os serviços, realize o pagamento agora."
+                : "Sua conta está pronta. Em instantes nosso consultor vai configurar seu plano e suas primeiras faturas aparecerão na sua área."}
             </p>
             <Button asChild className="mt-6 w-full" size="lg">
-              <Link to="/cliente">Ir para a área do cliente</Link>
+              <Link to={hasInvoice ? `/cliente/faturas/${createdInvoiceId}` : "/cliente"}>
+                {hasInvoice ? "Pagar agora" : "Ir para a área do cliente"}
+              </Link>
             </Button>
+            {hasInvoice && (
+              <Button asChild variant="ghost" className="mt-2 w-full">
+                <Link to="/cliente">Ir para a área do cliente</Link>
+              </Button>
+            )}
           </div>
         </main>
       </div>
