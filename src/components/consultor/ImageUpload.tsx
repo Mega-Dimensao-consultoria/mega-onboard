@@ -119,9 +119,13 @@ export function ImageUpload({
             {value ? "Trocar imagem" : "Enviar imagem"}
             <input
               type="file"
-              accept="image/*"
+              accept={ALLOWED_TYPES.join(",")}
               className="hidden"
-              onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) upload(f);
+                e.target.value = ""; // allow re-selecting same file
+              }}
             />
           </label>
         </Button>
@@ -131,6 +135,9 @@ export function ImageUpload({
           </Button>
         )}
       </div>
+      <p className="text-[11px] text-muted-foreground mt-1">
+        {ALLOWED_LABEL} · até {MAX_SIZE_MB} MB
+      </p>
       {value && <img src={value} alt="" className={previewClassName} />}
     </div>
   );
