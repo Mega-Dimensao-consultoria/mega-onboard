@@ -35,6 +35,7 @@ export function ImageUpload({
   onChange,
   field,
   label,
+  recommended,
   previewClassName = "mt-2 h-24 w-full object-cover rounded-lg border border-border",
 }: {
   value: string | null | undefined;
@@ -42,6 +43,8 @@ export function ImageUpload({
   /** Used as filename prefix to keep storage organized */
   field: string;
   label?: string;
+  /** Free-form recommended size hint, e.g. "1920 × 1080 px" or "Quadrada, 512 × 512 px" */
+  recommended?: string;
   previewClassName?: string;
 }) {
   const [busy, setBusy] = useState(false);
