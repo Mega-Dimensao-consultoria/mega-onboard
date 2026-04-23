@@ -81,6 +81,13 @@ export default function AceiteProposta() {
       const d = await res.json();
       setRazaoSocial(d.razao_social || "");
       setNomeFantasia(d.nome_fantasia || "");
+      if (d.cep) setCep(maskCEP(String(d.cep)));
+      if (d.logradouro) setLogradouro(d.logradouro);
+      if (d.numero) setNumero(String(d.numero));
+      if (d.complemento) setComplemento(d.complemento);
+      if (d.bairro) setBairro(d.bairro);
+      if (d.municipio) setCidade(d.municipio);
+      if (d.uf) setEstado(d.uf);
       setEndereco([d.logradouro, d.numero, d.bairro, d.municipio, d.uf, d.cep].filter(Boolean).join(", "));
       if (d.ddd_telefone_1) setTelefone(d.ddd_telefone_1);
       if (d.email) setEmailContato(d.email);
