@@ -427,9 +427,62 @@ export default function AceiteProposta() {
                 </div>
               )}
 
-              <div>
-                <Label>Endereço</Label>
-                <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade — UF" />
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-foreground/80">Endereço</div>
+
+                <div className="grid sm:grid-cols-[180px_1fr] gap-3">
+                  <div>
+                    <Label>CEP</Label>
+                    <div className="relative">
+                      <Input
+                        value={cep}
+                        onChange={(e) => onCepChange(e.target.value)}
+                        placeholder="00000-000"
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                      />
+                      {cepLoading && (
+                        <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Logradouro</Label>
+                    <Input value={logradouro} onChange={(e) => setLogradouro(e.target.value)} placeholder="Rua, avenida..." autoComplete="address-line1" />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-[140px_1fr] gap-3">
+                  <div>
+                    <Label>Número</Label>
+                    <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="123" autoComplete="address-line2" />
+                  </div>
+                  <div>
+                    <Label>Complemento</Label>
+                    <Input value={complemento} onChange={(e) => setComplemento(e.target.value)} placeholder="Apto, sala, referência..." />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Bairro</Label>
+                  <Input value={bairro} onChange={(e) => setBairro(e.target.value)} autoComplete="address-level3" />
+                </div>
+
+                <div className="grid sm:grid-cols-[1fr_120px] gap-3">
+                  <div>
+                    <Label>Cidade</Label>
+                    <Input value={cidade} onChange={(e) => setCidade(e.target.value)} autoComplete="address-level2" />
+                  </div>
+                  <div>
+                    <Label>UF</Label>
+                    <Select value={estado} onValueChange={setEstado}>
+                      <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+                      <SelectContent>
+                        {UFS.map((uf) => <SelectItem key={uf} value={uf}>{uf}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-3">
