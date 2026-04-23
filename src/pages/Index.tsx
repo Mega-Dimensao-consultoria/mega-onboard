@@ -15,6 +15,7 @@ import { CheckCircle2, ArrowRight, ArrowLeft, Sparkles, UserCircle2 } from "luci
 import { Link } from "react-router-dom";
 import { useBrand } from "@/hooks/useBrand";
 import { SiteFooter } from "@/components/SiteFooter";
+import { HomeSections } from "@/components/HomeSections";
 
 type Question = {
   id: string;
@@ -186,20 +187,40 @@ const Index = () => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
-              className="text-center"
             >
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-4 py-1.5 text-xs font-medium tracking-wide uppercase mb-6">
-                <Sparkles className="h-3.5 w-3.5" /> {brand?.hero_badge || "Onboarding inteligente"}
+              <div
+                className="relative text-center rounded-3xl px-6 py-12 md:py-20 overflow-hidden"
+                style={
+                  brand?.hero_background_url
+                    ? {
+                        backgroundImage: `url(${brand.hero_background_url})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }
+                    : undefined
+                }
+              >
+                {brand?.hero_background_url && (
+                  <div
+                    className="absolute inset-0 bg-background"
+                    style={{ opacity: brand?.hero_overlay_opacity ?? 0.5 }}
+                  />
+                )}
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-4 py-1.5 text-xs font-medium tracking-wide uppercase mb-6">
+                    <Sparkles className="h-3.5 w-3.5" /> {brand?.hero_badge || "Onboarding inteligente"}
+                  </div>
+                  <h1 className="font-display text-5xl md:text-6xl text-balance leading-[1.05] mb-6">
+                    {renderHeroTitle(brand?.hero_title || "Vamos desenhar o projeto certo para você.")}
+                  </h1>
+                  <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-10">
+                    {brand?.hero_subtitle || "Em poucos minutos, você responde as perguntas estratégicas que orientam o briefing técnico do seu projeto."}
+                  </p>
+                  <Button size="lg" className="h-14 px-8 text-base" onClick={() => setStepIdx(1)}>
+                    {brand?.hero_cta_label || "Começar agora"} <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </div>
               </div>
-              <h1 className="font-display text-5xl md:text-6xl text-balance leading-[1.05] mb-6">
-                {renderHeroTitle(brand?.hero_title || "Vamos desenhar o projeto certo para você.")}
-              </h1>
-              <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-10">
-                {brand?.hero_subtitle || "Em poucos minutos, você responde as perguntas estratégicas que orientam o briefing técnico do seu projeto."}
-              </p>
-              <Button size="lg" className="h-14 px-8 text-base" onClick={() => setStepIdx(1)}>
-                {brand?.hero_cta_label || "Começar agora"} <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16">
                 {steps.map((s, i) => (
@@ -209,6 +230,8 @@ const Index = () => {
                   </div>
                 ))}
               </div>
+
+              <HomeSections />
             </motion.section>
           ) : currentStep ? (
             <motion.section
