@@ -33,6 +33,7 @@ export default function AceiteProposta() {
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
 
   // step 1
   const [docType, setDocType] = useState<DocType>("cnpj");
