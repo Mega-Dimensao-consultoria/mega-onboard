@@ -41,7 +41,15 @@ export default function AceiteProposta() {
   const [fullName, setFullName] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
-  const [endereco, setEndereco] = useState("");
+  const [endereco, setEndereco] = useState(""); // legado concatenado, mantido para compatibilidade
+  const [cep, setCep] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
   const [telefone, setTelefone] = useState("");
   const [emailContato, setEmailContato] = useState("");
 
