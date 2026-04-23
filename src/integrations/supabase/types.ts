@@ -46,26 +46,48 @@ export type Database = {
       }
       brand_settings: {
         Row: {
+          accent_color: string | null
+          auth_accent_color: string | null
+          auth_image_url: string | null
+          auth_subtitle: string | null
+          auth_title: string | null
+          background_color: string | null
+          body_font: string | null
+          client_accent_color: string | null
+          client_background_color: string | null
+          client_foreground_color: string | null
           client_login_cta: string | null
+          client_logo_url: string | null
           client_primary_color: string | null
+          client_secondary_color: string | null
           cnpj: string | null
           created_at: string
           email: string | null
           endereco: string | null
           footer_links: Json | null
           footer_text: string | null
+          foreground_color: string | null
+          heading_font: string | null
+          hero_background_url: string | null
           hero_badge: string | null
           hero_cta_label: string | null
+          hero_overlay_opacity: number | null
           hero_subtitle: string | null
           hero_title: string | null
           id: string
           logo_url: string | null
+          nav_links: Json | null
           nome_fantasia: string | null
           paypal_username: string | null
           pix_key: string | null
           pix_key_type: string | null
           primary_color: string | null
+          proposal_accent_color: string | null
+          proposal_after_accept: string | null
+          proposal_intro: string | null
+          proposal_title: string | null
           razao_social: string | null
+          secondary_color: string | null
           site_description: string | null
           site_title: string | null
           success_message: string | null
@@ -74,26 +96,48 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accent_color?: string | null
+          auth_accent_color?: string | null
+          auth_image_url?: string | null
+          auth_subtitle?: string | null
+          auth_title?: string | null
+          background_color?: string | null
+          body_font?: string | null
+          client_accent_color?: string | null
+          client_background_color?: string | null
+          client_foreground_color?: string | null
           client_login_cta?: string | null
+          client_logo_url?: string | null
           client_primary_color?: string | null
+          client_secondary_color?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
           footer_links?: Json | null
           footer_text?: string | null
+          foreground_color?: string | null
+          heading_font?: string | null
+          hero_background_url?: string | null
           hero_badge?: string | null
           hero_cta_label?: string | null
+          hero_overlay_opacity?: number | null
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: string
           logo_url?: string | null
+          nav_links?: Json | null
           nome_fantasia?: string | null
           paypal_username?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
           primary_color?: string | null
+          proposal_accent_color?: string | null
+          proposal_after_accept?: string | null
+          proposal_intro?: string | null
+          proposal_title?: string | null
           razao_social?: string | null
+          secondary_color?: string | null
           site_description?: string | null
           site_title?: string | null
           success_message?: string | null
@@ -102,26 +146,48 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accent_color?: string | null
+          auth_accent_color?: string | null
+          auth_image_url?: string | null
+          auth_subtitle?: string | null
+          auth_title?: string | null
+          background_color?: string | null
+          body_font?: string | null
+          client_accent_color?: string | null
+          client_background_color?: string | null
+          client_foreground_color?: string | null
           client_login_cta?: string | null
+          client_logo_url?: string | null
           client_primary_color?: string | null
+          client_secondary_color?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
           footer_links?: Json | null
           footer_text?: string | null
+          foreground_color?: string | null
+          heading_font?: string | null
+          hero_background_url?: string | null
           hero_badge?: string | null
           hero_cta_label?: string | null
+          hero_overlay_opacity?: number | null
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: string
           logo_url?: string | null
+          nav_links?: Json | null
           nome_fantasia?: string | null
           paypal_username?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
           primary_color?: string | null
+          proposal_accent_color?: string | null
+          proposal_after_accept?: string | null
+          proposal_intro?: string | null
+          proposal_title?: string | null
           razao_social?: string | null
+          secondary_color?: string | null
           site_description?: string | null
           site_title?: string | null
           success_message?: string | null
@@ -384,6 +450,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      home_sections: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          kind: string
+          sort_order: number
+          subtitle: string | null
+          title: string | null
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          kind: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          kind?: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: []
       }
       invoice_items: {
         Row: {
@@ -895,20 +997,42 @@ export type Database = {
       get_public_brand: {
         Args: never
         Returns: {
+          accent_color: string
+          auth_accent_color: string
+          auth_image_url: string
+          auth_subtitle: string
+          auth_title: string
+          background_color: string
+          body_font: string
+          client_accent_color: string
+          client_background_color: string
+          client_foreground_color: string
           client_login_cta: string
+          client_logo_url: string
           client_primary_color: string
+          client_secondary_color: string
           created_at: string
           footer_links: Json
           footer_text: string
+          foreground_color: string
+          heading_font: string
+          hero_background_url: string
           hero_badge: string
           hero_cta_label: string
+          hero_overlay_opacity: number
           hero_subtitle: string
           hero_title: string
           id: string
           logo_url: string
+          nav_links: Json
           nome_fantasia: string
           primary_color: string
+          proposal_accent_color: string
+          proposal_after_accept: string
+          proposal_intro: string
+          proposal_title: string
           razao_social: string
+          secondary_color: string
           site_description: string
           site_title: string
           success_message: string

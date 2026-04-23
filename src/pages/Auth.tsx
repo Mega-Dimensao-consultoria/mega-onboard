@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useBrand } from "@/hooks/useBrand";
 
 const emailSchema = z.string().trim().email("Email inválido").max(255);
 const passwordSchema = z.string().min(8, "Senha precisa de no mínimo 8 caracteres").max(72);
@@ -19,6 +20,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { user, role, loading } = useAuth();
+  const { brand } = useBrand();
   const [tab, setTab] = useState<"login" | "signup">("login");
   const [busy, setBusy] = useState(false);
 
@@ -90,14 +92,31 @@ export default function Auth() {
     toast({ title: "Conta criada", description: "Você já pode acessar." });
   };
 
+  const accent = brand?.auth_accent_color;
   return (
     <div className="min-h-screen flex flex-col">
       <BrandHeader />
-      <main className="flex-1 grid place-items-center px-6 py-10">
+      <main className="flex-1 grid lg:grid-cols-2 px-0">
+        {brand?.auth_image_url && (
+          <div
+            className="hidden lg:block bg-secondary"
+            style={{
+              backgroundImage: `url(${brand.auth_image_url})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+        )}
+        <div className={`flex items-center justify-center px-6 py-10 ${brand?.auth_image_url ? "" : "lg:col-span-2"}`}>
         <div className="w-full max-w-md bg-card border border-border/60 rounded-2xl p-8 shadow-elegant">
           <div className="mb-6">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Acesso</div>
-            <h1 className="font-display text-3xl mt-1">Entre ou crie sua conta</h1>
+            <div
+              className="text-xs uppercase tracking-widest text-muted-foreground"
+              style={accent ? { color: `hsl(${accent})` } : undefined}
+            >
+              {brand?.auth_subtitle || "Acesso"}
+            </div>
+            <h1 className="font-display text-3xl mt-1">{brand?.auth_title || "Entre ou crie sua conta"}</h1>
           </div>
           <Tabs value={tab} onValueChange={(v) => setTab(v as "login" | "signup")} className="w-full">
             <TabsList className="grid grid-cols-2 w-full">
@@ -145,6 +164,7 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
+        </div>
         </div>
       </main>
     </div>

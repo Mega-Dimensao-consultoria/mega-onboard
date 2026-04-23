@@ -15,6 +15,7 @@ import { ContractsPanel } from "@/components/consultor/ContractsPanel";
 import { ConsultorInvoicesPanel } from "@/components/consultor/ConsultorInvoicesPanel";
 import { PlanChangeRequestsPanel } from "@/components/consultor/PlanChangeRequestsPanel";
 import { AuditLogPanel } from "@/components/consultor/AuditLogPanel";
+import { HomeSectionsPanel } from "@/components/consultor/HomeSectionsPanel";
 import { LogOut } from "lucide-react";
 
 export default function Consultor() {
@@ -53,6 +54,7 @@ export default function Consultor() {
               <TabsTrigger value="editor">Formulário</TabsTrigger>
               <TabsTrigger value="content">Conteúdo</TabsTrigger>
               <TabsTrigger value="brand">Marca</TabsTrigger>
+              <TabsTrigger value="home-blocks">Blocos da Home</TabsTrigger>
               <TabsTrigger value="audit">Auditoria</TabsTrigger>
             </TabsList>
           </div>
@@ -66,6 +68,7 @@ export default function Consultor() {
           <TabsContent value="editor" className="mt-6"><QuestionsEditor /></TabsContent>
           <TabsContent value="content" className="mt-6"><ContentPanel brand={brand} onSaved={refresh} /></TabsContent>
           <TabsContent value="brand" className="mt-6"><BrandingPanel brand={brand} onSaved={refresh} /></TabsContent>
+          <TabsContent value="home-blocks" className="mt-6"><HomeSectionsPanel /></TabsContent>
           <TabsContent value="audit" className="mt-6"><AuditLogPanel /></TabsContent>
         </Tabs>
       </main>
