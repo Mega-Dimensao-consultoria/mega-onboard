@@ -94,7 +94,26 @@ export default function AceiteProposta() {
       toast({ title: "Dados preenchidos automaticamente" });
     } catch (e) {
       toast({ title: "Não encontramos esse CNPJ", description: e instanceof Error ? e.message : "Tente novamente em instantes.", variant: "destructive" });
-    } finally { setSearchingCnpj(false); }
+  };
+
+  const onCepChange = async (v: string) => {
+    const masked = maskCEP(v);
+    setCep(masked);
+    if (onlyDigits(masked).length === 8) {
+      setCepLoading(true);
+      const r = await fetchCep(masked);
+      setCepLoading(false);
+      if (r) {
+        if (r.logradouro) setLogradouro(r.logradouro);
+        if (r.bairro) setBairro(r.bairro);
+        if (r.localidade) setCidade(r.localidade);
+        if (r.uf) setEstado(r.uf);
+        if (!complemento && r.complemento) setComplemento(r.complemento);
+        toast({ title: "Endereço encontrado", description: `${r.localidade}/${r.uf}` });
+      } else {
+        toast({ title: "CEP não encontrado", description: "Preencha o endereço manualmente.", variant: "destructive" });
+      }
+    }
   };
 
   const validateStep1 = () => {
