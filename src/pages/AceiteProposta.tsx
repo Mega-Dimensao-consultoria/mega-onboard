@@ -235,6 +235,7 @@ export default function AceiteProposta() {
       if (cErr && !cErr.message.includes("duplicate")) throw cErr;
 
       // 5. copia os itens propostos para contract_items
+      let firstInvoiceId: string | null = null;
       if (hasItems && contractRow?.id) {
         const today = new Date();
         const itemsPayload = proposedItems.map((p) => {
@@ -262,8 +263,64 @@ export default function AceiteProposta() {
             active: true,
           };
         });
-        await supabase.from("contract_items").insert(itemsPayload);
+        const { data: insertedItems } = await supabase
+          .from("contract_items")
+          .insert(itemsPayload)
+          .select("id, custom_name, custom_price_cents, quantity, billing_cycle, product_id");
+
+        // 5b. Gera a primeira fatura IMEDIATAMENTE (pagamento exigido para iniciar o serviço)
+        try {
+          const periodStart = today.toISOString().slice(0, 10);
+          const periodEnd = new Date(today); periodEnd.setMonth(periodEnd.getMonth() + 1);
+          const due = new Date(today); due.setDate(due.getDate() + 3); // 3 dias para pagar
+          let subtotal = 0;
+          const invoiceItemRows: Array<{ description: string; amount_cents: number; quantity: number; contract_item_id: string }> = [];
+          for (const ci of insertedItems ?? []) {
+            const proposed = proposedItems.find((p) =>
+              (p.product_id && p.product_id === ci.product_id) ||
+              (!p.product_id && p.custom_name === ci.custom_name)
+            );
+            const price = ci.custom_price_cents ?? proposed?.products?.price_cents ?? 0;
+            const desc = ci.custom_name ?? proposed?.products?.name ?? "Item";
+            const amount = price * (ci.quantity ?? 1);
+            subtotal += amount;
+            invoiceItemRows.push({ description: desc, amount_cents: amount, quantity: ci.quantity ?? 1, contract_item_id: ci.id });
+          }
+          if (subtotal > 0) {
+            const { data: inv, error: invErr } = await supabase.from("invoices").insert({
+              client_id: userId,
+              contract_id: contractRow.id,
+              status: "open",
+              subtotal_cents: subtotal,
+              total_cents: subtotal,
+              due_date: due.toISOString().slice(0, 10),
+              period_start: periodStart,
+              period_end: periodEnd.toISOString().slice(0, 10),
+              notes: "Fatura inicial gerada na contratação",
+            }).select("id").single();
+            if (!invErr && inv) {
+              firstInvoiceId = inv.id;
+              await supabase.from("invoice_items").insert(
+                invoiceItemRows.map((r) => ({ ...r, invoice_id: inv.id }))
+              );
+              // Avança next_billing_at de cada item para o próximo ciclo (já cobramos o atual)
+              for (const ci of insertedItems ?? []) {
+                const cycle = ci.billing_cycle;
+                const base = new Date(today);
+                if (cycle === "monthly") base.setMonth(base.getMonth() + 1);
+                else if (cycle === "quarterly") base.setMonth(base.getMonth() + 3);
+                else if (cycle === "yearly") base.setFullYear(base.getFullYear() + 1);
+                await supabase.from("contract_items")
+                  .update({ next_billing_at: base.toISOString().slice(0, 10) })
+                  .eq("id", ci.id);
+              }
+            }
+          }
+        } catch (invGenErr) {
+          console.warn("Falha ao gerar fatura inicial", invGenErr);
+        }
       }
+      setCreatedInvoiceId(firstInvoiceId);
 
       // 6. gera PDF do contrato e faz upload (best-effort)
       let contractPdfPath: string | null = null;
