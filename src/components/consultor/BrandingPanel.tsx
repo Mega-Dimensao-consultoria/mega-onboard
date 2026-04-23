@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Search, Upload } from "lucide-react";
+import { Search } from "lucide-react";
+import { ImageUpload } from "./ImageUpload";
 
 export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved: () => void }) {
   const [b, setB] = useState<Brand>(brand || {});
@@ -42,19 +43,6 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
     }
   };
 
-  const onLogo = async (file: File) => {
-    try {
-      const ext = file.name.split(".").pop() || "png";
-      const path = `logo-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("brand-assets").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data: pub } = supabase.storage.from("brand-assets").getPublicUrl(path);
-      setB((p) => ({ ...p, logo_url: pub.publicUrl }));
-      toast({ title: "Logo enviada" });
-    } catch (e) {
-      toast({ title: "Erro upload", description: e instanceof Error ? e.message : "", variant: "destructive" });
-    }
-  };
 
   const save = async () => {
     setSaving(true);
@@ -129,16 +117,13 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
             )}
             <p className="text-[11px] text-muted-foreground">A cor do sistema aplica-se a todos os clientes — eles não conseguem trocar.</p>
           </div>
-          <div>
-            <Label>Logo</Label>
-            <div className="flex items-center gap-4 mt-1">
-              {b.logo_url && <img src={b.logo_url} alt="Logo" className="h-16 w-auto object-contain rounded border border-border p-1 bg-secondary/30" />}
-              <label className="flex items-center gap-2 px-4 py-2 rounded-md border border-border hover:bg-secondary cursor-pointer text-sm">
-                <Upload className="h-4 w-4" /> Enviar logo
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onLogo(e.target.files[0])} />
-              </label>
-            </div>
-          </div>
+          <ImageUpload
+            label="Logo"
+            field="logo"
+            value={b.logo_url}
+            onChange={(url) => setB((p) => ({ ...p, logo_url: url }))}
+            previewClassName="mt-2 h-16 w-auto object-contain rounded border border-border p-1 bg-secondary/30"
+          />
         </div>
 
         <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-4">
