@@ -59,8 +59,9 @@ Deno.serve(async (req) => {
     });
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // "Hoje" sempre no fuso de Brasília (America/Sao_Paulo, GMT-3 sem horário de verão)
+  const brtNow = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const today = new Date(Date.UTC(brtNow.getUTCFullYear(), brtNow.getUTCMonth(), brtNow.getUTCDate()));
   const todayIso = today.toISOString().slice(0, 10);
 
   const summary = { generated: 0, overdueMarked: 0, remindersSent: 0, errors: [] as string[] };
