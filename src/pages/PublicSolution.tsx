@@ -86,6 +86,10 @@ export default function PublicSolution() {
     [lead?.technical_solution],
   );
 
+  const accentStyle = brand?.proposal_accent_color
+    ? ({ color: `hsl(${brand.proposal_accent_color})` } as React.CSSProperties)
+    : undefined;
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando…</div>;
   }
@@ -107,10 +111,13 @@ export default function PublicSolution() {
         <div className="text-xs uppercase tracking-widest text-muted-foreground">
           {brand?.nome_fantasia || "Mega Dimensão"} · Briefing
         </div>
-        <h1 className="font-display text-4xl mt-1">Solução Técnica Apresentada</h1>
+        <h1 className="font-display text-4xl mt-1" style={accentStyle}>
+          {brand?.proposal_title || "Solução Técnica Apresentada"}
+        </h1>
         <p className="text-muted-foreground mt-2">
-          Para {lead.contact_name || "—"}
-          {lead.solution_type ? ` · ${lead.solution_type}` : ""}
+          {brand?.proposal_intro
+            ? brand.proposal_intro
+            : <>Para {lead.contact_name || "—"}{lead.solution_type ? ` · ${lead.solution_type}` : ""}</>}
         </p>
         {lead.technical_solution_updated_at && (
           <p className="text-xs text-muted-foreground mt-1">
@@ -168,7 +175,7 @@ export default function PublicSolution() {
               <div>
                 <h2 className="font-display text-xl">Proposta já aceita</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Esta proposta já foi formalizada. {user ? "Acesse sua área para acompanhar." : "Entre na sua conta para acompanhar contratos e faturas."}
+                  {brand?.proposal_after_accept || `Esta proposta já foi formalizada. ${user ? "Acesse sua área para acompanhar." : "Entre na sua conta para acompanhar contratos e faturas."}`}
                 </p>
                 <div className="mt-4">
                   <Button asChild>
