@@ -45,6 +45,34 @@ export function ImageUpload({
   previewClassName?: string;
 }) {
   const [busy, setBusy] = useState(false);
+  const [meta, setMeta] = useState<ImageMeta | null>(null);
+
+  // Load metadata when value changes (existing image)
+  useEffect(() => {
+    if (!value) {
+      setMeta(null);
+      return;
+    }
+    let cancelled = false;
+    const img = new Image();
+    img.onload = async () => {
+      if (cancelled) return;
+      let bytes: number | null = null;
+      try {
+        const head = await fetch(value, { method: "HEAD" });
+        const len = head.headers.get("content-length");
+        if (len) bytes = parseInt(len, 10);
+      } catch {
+        // ignore
+      }
+      if (!cancelled) setMeta({ width: img.naturalWidth, height: img.naturalHeight, bytes });
+    };
+    img.onerror = () => !cancelled && setMeta(null);
+    img.src = value;
+    return () => {
+      cancelled = true;
+    };
+  }, [value]);
 
   const upload = async (file: File) => {
     // Validate type
