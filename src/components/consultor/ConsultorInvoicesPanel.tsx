@@ -180,14 +180,20 @@ export function ConsultorInvoicesPanel() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="font-display text-2xl">Faturas</h2>
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList>
-            <TabsTrigger value="all">Todas</TabsTrigger>
-            <TabsTrigger value="open">Abertas</TabsTrigger>
-            <TabsTrigger value="overdue">Vencidas</TabsTrigger>
-            <TabsTrigger value="paid">Pagas</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={triggerGenerate} disabled={generating}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${generating ? "animate-spin" : ""}`} />
+            {generating ? "Gerando…" : "Gerar faturas agora"}
+          </Button>
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+            <TabsList>
+              <TabsTrigger value="all">Todas</TabsTrigger>
+              <TabsTrigger value="open">Abertas</TabsTrigger>
+              <TabsTrigger value="overdue">Vencidas</TabsTrigger>
+              <TabsTrigger value="paid">Pagas</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {loading ? <Card><CardContent className="py-10 text-center text-muted-foreground">Carregando…</CardContent></Card>
