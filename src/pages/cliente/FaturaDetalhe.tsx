@@ -47,6 +47,40 @@ export default function FaturaDetalhe() {
 
   useEffect(() => { refresh(); }, [id]);
 
+  // Captura automática ao retornar do PayPal: ?paypal=return&token=ORDER_ID
+  useEffect(() => {
+    const status = searchParams.get("paypal");
+    const orderId = searchParams.get("token");
+    if (!status || !id) return;
+    if (status === "cancel") {
+      toast({ title: "Pagamento cancelado", description: "Você cancelou o pagamento no PayPal." });
+      const next = new URLSearchParams(searchParams); next.delete("paypal"); next.delete("token"); next.delete("PayerID");
+      setSearchParams(next, { replace: true });
+      return;
+    }
+    if (status === "return" && orderId) {
+      setPaypalCapturing(true);
+      supabase.functions.invoke("paypal-capture-order", { body: { order_id: orderId, invoice_id: id } })
+        .then(({ data, error }) => {
+          if (error) throw error;
+          const completed = (data as { completed?: boolean })?.completed;
+          if (completed) {
+            toast({ title: "Pagamento confirmado!", description: "Sua fatura foi marcada como paga." });
+          } else {
+            toast({ title: "Pagamento em processamento", description: "Aguardando confirmação do PayPal." });
+          }
+          refresh();
+        })
+        .catch((e) => toast({ title: "Erro ao confirmar pagamento", description: e instanceof Error ? e.message : "", variant: "destructive" }))
+        .finally(() => {
+          setPaypalCapturing(false);
+          const next = new URLSearchParams(searchParams); next.delete("paypal"); next.delete("token"); next.delete("PayerID");
+          setSearchParams(next, { replace: true });
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   const pixPayload = useMemo(() => {
     if (!brand?.pix_key || !inv?.total_cents) return null;
     try {
