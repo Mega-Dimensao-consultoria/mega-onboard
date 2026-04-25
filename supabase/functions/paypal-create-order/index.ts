@@ -105,9 +105,9 @@ Deno.serve(async (req) => {
     const currency = "BRL";
 
     const adminClient = createClient(supaUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const env = await getPaypalEnv(adminClient);
-    const accessToken = await getAccessToken(env);
-    const orderRes = await fetch(`${paypalBaseFor(env)}/v2/checkout/orders`, {
+    const cfg = await getPaypalConfig(adminClient);
+    const accessToken = await getAccessToken(cfg);
+    const orderRes = await fetch(`${paypalBaseFor(cfg.env)}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
     const order = await orderRes.json();
     if (!orderRes.ok) {
       console.error("PayPal create order failed", order);
-      return new Response(JSON.stringify({ error: "PayPal create order failed", details: order, env }), {
+      return new Response(JSON.stringify({ error: "PayPal create order failed", details: order, env: cfg.env }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
