@@ -96,9 +96,9 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supaUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const env = await getPaypalEnv(adminClient);
-    const accessToken = await getAccessToken(env);
-    const capRes = await fetch(`${paypalBaseFor(env)}/v2/checkout/orders/${orderId}/capture`, {
+    const cfg = await getPaypalConfig(adminClient);
+    const accessToken = await getAccessToken(cfg);
+    const capRes = await fetch(`${paypalBaseFor(cfg.env)}/v2/checkout/orders/${orderId}/capture`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
