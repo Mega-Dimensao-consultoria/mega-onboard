@@ -141,7 +141,7 @@ export function generateBRD(
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(140);
-    doc.text(`${brand?.nome_fantasia || "Prospekta"} · Prospekta BRD`, M, H - 20);
+    doc.text(`${brand?.nome_fantasia || "Prospekta"} · BRD`, M, H - 20);
     doc.text(`Página ${i}/${pageCount}`, W - M, H - 20, { align: "right" });
   }
 
