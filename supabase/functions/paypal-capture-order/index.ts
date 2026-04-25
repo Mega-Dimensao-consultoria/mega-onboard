@@ -5,19 +5,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function paypalBase() {
-  const env = (Deno.env.get("PAYPAL_ENV") || "sandbox").toLowerCase();
-  return env === "live"
-    ? "https://api-m.paypal.com"
-    : "https://api-m.sandbox.paypal.com";
+async function getPaypalEnv(adminClient: ReturnType<typeof createClient>): Promise<"sandbox" | "live"> {
+  const { data } = await adminClient
+    .from("brand_settings")
+    .select("paypal_env")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const env = (data as { paypal_env?: string } | null)?.paypal_env;
+  return env === "live" ? "live" : "sandbox";
 }
 
-async function getAccessToken() {
+function paypalBaseFor(env: "sandbox" | "live") {
+  return env === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+}
+
+async function getAccessToken(env: "sandbox" | "live") {
   const id = Deno.env.get("PAYPAL_CLIENT_ID");
   const secret = Deno.env.get("PAYPAL_CLIENT_SECRET");
   if (!id || !secret) throw new Error("PayPal credentials not configured");
   const auth = btoa(`${id}:${secret}`);
-  const res = await fetch(`${paypalBase()}/v1/oauth2/token`, {
+  const res = await fetch(`${paypalBaseFor(env)}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${auth}`,
@@ -80,8 +88,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const accessToken = await getAccessToken();
-    const capRes = await fetch(`${paypalBase()}/v2/checkout/orders/${orderId}/capture`, {
+    const adminClient = createClient(supaUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const env = await getPaypalEnv(adminClient);
+    const accessToken = await getAccessToken(env);
+    const capRes = await fetch(`${paypalBaseFor(env)}/v2/checkout/orders/${orderId}/capture`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -102,8 +112,6 @@ Deno.serve(async (req) => {
 
     const status = cap?.status || "COMPLETED";
     const isCompleted = status === "COMPLETED" || (cap?.purchase_units?.[0]?.payments?.captures?.[0]?.status === "COMPLETED");
-
-    const adminClient = createClient(supaUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     if (isCompleted) {
       await adminClient.from("invoices").update({

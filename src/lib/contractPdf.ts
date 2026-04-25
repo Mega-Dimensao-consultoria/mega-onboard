@@ -191,7 +191,7 @@ export function generateContractPdf(input: ContractPdfInput): Blob {
     },
     {
       title: "4. PAGAMENTO",
-      body: "As cobranças serão emitidas conforme o ciclo de cada item. O CONTRATANTE pagará via Pix ou PayPal, conforme dados disponibilizados na área do cliente. O atraso superior a 15 dias autoriza a suspensão dos serviços.",
+      body: "As cobranças serão emitidas conforme o ciclo de cada item. O CONTRATANTE pagará via Pix ou PayPal, conforme opções disponibilizadas na área do cliente. O atraso superior a 15 dias autoriza a suspensão dos serviços.",
     },
     {
       title: "5. PROTEÇÃO DE DADOS (LGPD)",

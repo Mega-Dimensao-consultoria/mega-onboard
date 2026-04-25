@@ -151,9 +151,22 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
               <Input value={b.pix_key || ""} onChange={(e) => setB({ ...b, pix_key: e.target.value })} placeholder="sua chave Pix" />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            O PayPal é integrado via API: ao clicar em <strong>Pagar com PayPal</strong> na fatura, o cliente é redirecionado ao PayPal com o valor já preenchido. Configure as credenciais (Client ID/Secret) nos secrets do projeto.
-          </p>
+          <div className="border-t border-border/60 pt-4 space-y-2">
+            <Label>Ambiente do PayPal</Label>
+            <Select
+              value={b.paypal_env || "sandbox"}
+              onValueChange={(v) => setB({ ...b, paypal_env: v as "sandbox" | "live" })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sandbox">Sandbox (testes — sem cobrança real)</SelectItem>
+                <SelectItem value="live">Produção (pagamentos reais)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Em <strong>Sandbox</strong>, use credenciais do app de testes do PayPal Developer. Em <strong>Produção</strong>, use credenciais do app Live. As credenciais (Client ID e Secret) ficam nos secrets do projeto.
+            </p>
+          </div>
         </div>
 
         <Button onClick={save} disabled={saving} className="w-full">{saving ? "Salvando..." : "Salvar alterações"}</Button>
