@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { useClientId } from "@/hooks/useClientId";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fmtMoney, fmtDate, invoiceStatusLabel } from "@/lib/format";
 import { buildPixPayload } from "@/lib/pix";
-import { ArrowLeft, Copy, ExternalLink, CheckCircle2, QrCode } from "lucide-react";
+import { ArrowLeft, Copy, ExternalLink, CheckCircle2, QrCode, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type Invoice = {
@@ -24,12 +24,15 @@ type Item = { id: string; description: string; amount_cents: number; quantity: n
 
 export default function FaturaDetalhe() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { clientId, isImpersonating } = useClientId();
   const { brand } = useBrand();
   const [inv, setInv] = useState<Invoice | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [paypalLoading, setPaypalLoading] = useState(false);
+  const [paypalCapturing, setPaypalCapturing] = useState(false);
 
   const refresh = async () => {
     if (!id) return;
