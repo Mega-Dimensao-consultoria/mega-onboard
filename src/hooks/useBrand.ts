@@ -43,7 +43,6 @@ export type Brand = {
   // Pagamento
   pix_key?: string | null;
   pix_key_type?: string | null;
-  paypal_username?: string | null;
   // Hero
   hero_badge?: string | null;
   hero_title?: string | null;

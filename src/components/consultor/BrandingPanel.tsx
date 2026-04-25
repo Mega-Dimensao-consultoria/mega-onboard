@@ -151,11 +151,9 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
               <Input value={b.pix_key || ""} onChange={(e) => setB({ ...b, pix_key: e.target.value })} placeholder="sua chave Pix" />
             </div>
           </div>
-          <div>
-            <Label>Usuário PayPal (paypal.me)</Label>
-            <Input value={b.paypal_username || ""} onChange={(e) => setB({ ...b, paypal_username: e.target.value })} placeholder="seuusuario" />
-            <p className="text-xs text-muted-foreground mt-1">Sem o @ — apenas o nome de usuário do paypal.me/<em>nome</em>.</p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            O PayPal é integrado via API: ao clicar em <strong>Pagar com PayPal</strong> na fatura, o cliente é redirecionado ao PayPal com o valor já preenchido. Configure as credenciais (Client ID/Secret) nos secrets do projeto.
+          </p>
         </div>
 
         <Button onClick={save} disabled={saving} className="w-full">{saving ? "Salvando..." : "Salvar alterações"}</Button>
