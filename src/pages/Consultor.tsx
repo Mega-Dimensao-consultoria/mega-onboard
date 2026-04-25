@@ -63,7 +63,16 @@ export default function Consultor() {
           <TabsContent value="leads" className="mt-6"><LeadsPanel brand={brand} /></TabsContent>
           <TabsContent value="clients" className="mt-6"><ClientsPanel /></TabsContent>
           <TabsContent value="contracts" className="mt-6"><ContractsPanel /></TabsContent>
-          <TabsContent value="invoices" className="mt-6"><ConsultorInvoicesPanel /></TabsContent>
+          <TabsContent value="invoices" className="mt-6">
+            <Tabs defaultValue="list">
+              <TabsList>
+                <TabsTrigger value="list">Faturas</TabsTrigger>
+                <TabsTrigger value="settings">Cobranças</TabsTrigger>
+              </TabsList>
+              <TabsContent value="list" className="mt-4"><ConsultorInvoicesPanel /></TabsContent>
+              <TabsContent value="settings" className="mt-4"><BillingSettingsPanel /></TabsContent>
+            </Tabs>
+          </TabsContent>
           <TabsContent value="plan-changes" className="mt-6"><PlanChangeRequestsPanel /></TabsContent>
           <TabsContent value="catalog" className="mt-6"><CatalogPanel /></TabsContent>
           <TabsContent value="editor" className="mt-6"><QuestionsEditor /></TabsContent>
