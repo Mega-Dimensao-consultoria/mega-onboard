@@ -37,7 +37,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "mega-onboard"
-const SENDER_DOMAIN = "emails.prospekta.megadimensao.com.br"
+const SENDER_DOMAIN = "notify.prospekta.megadimensao.com.br"
 const ROOT_DOMAIN = "prospekta.megadimensao.com.br"
 const FROM_DOMAIN = "emails.prospekta.megadimensao.com.br" // Domain shown in From address (may be root or sender subdomain)
 
