@@ -9,7 +9,7 @@ interface Props {
   portalUrl?: string
 }
 
-const ProposalAcceptedEmail = ({ name, portalUrl = 'https://mega-onboard.lovable.app/cliente' }: Props) => (
+const ProposalAcceptedEmail = ({ name, portalUrl = 'https://prospekta.megadimensao.com.br/cliente' }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
     <Preview>Recebemos seu aceite — próximos passos</Preview>
@@ -38,5 +38,5 @@ export const template = {
   component: ProposalAcceptedEmail,
   subject: 'Recebemos seu aceite — bem-vindo à Prospekta',
   displayName: 'Aceite de proposta',
-  previewData: { name: 'Joana', portalUrl: 'https://mega-onboard.lovable.app/cliente' },
+  previewData: { name: 'Joana', portalUrl: 'https://prospekta.megadimensao.com.br/cliente' },
 } satisfies TemplateEntry

@@ -2,7 +2,7 @@ import { useBrand, type FooterLink } from "@/hooks/useBrand";
 
 export function SiteFooter() {
   const { brand } = useBrand();
-  const text = (brand?.footer_text || "© {year} Mega Dimensão Consultoria · Prospekta").replace(
+  const text = (brand?.footer_text || "© {year} Prospekta").replace(
     "{year}",
     String(new Date().getFullYear())
   );

@@ -119,7 +119,7 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
     try {
       const url = await uploadAndGetPdfUrl();
       if (!url) throw new Error("Falha ao gerar PDF");
-      const msg = `Olá ${active.contact_name || ""}! Segue o briefing completo do nosso atendimento:\n\n${url}\n\n${brand?.nome_fantasia || "Mega Dimensão"}`;
+      const msg = `Olá ${active.contact_name || ""}! Segue o briefing completo do nosso atendimento:\n\n${url}\n\n${brand?.nome_fantasia || "Prospekta"}`;
       window.open(waLink(active.contact_whatsapp, msg), "_blank");
     } catch (e) {
       toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
@@ -142,7 +142,7 @@ export function LeadsPanel({ brand }: { brand: Brand | null }) {
       await saveSolution();
     }
     const url = `${window.location.origin}/solucao/${active.id}`;
-    const msg = `Olá ${active.contact_name || ""}! Segue a solução técnica que preparamos:\n\n${url}\n\nPara aceitar a proposta, clique em "Aceitar proposta" na página.\n\n${brand?.nome_fantasia || "Mega Dimensão"}`;
+    const msg = `Olá ${active.contact_name || ""}! Segue a solução técnica que preparamos:\n\n${url}\n\nPara aceitar a proposta, clique em "Aceitar proposta" na página.\n\n${brand?.nome_fantasia || "Prospekta"}`;
     window.open(waLink(active.contact_whatsapp, msg), "_blank");
   };
 

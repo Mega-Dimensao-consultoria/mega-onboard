@@ -109,7 +109,7 @@ export default function PublicSolution() {
       <BrandHeader />
       <main className="flex-1 container max-w-3xl py-10">
         <div className="text-xs uppercase tracking-widest text-muted-foreground">
-          {brand?.nome_fantasia || "Mega Dimensão"} · Briefing
+          {brand?.nome_fantasia || "Prospekta"} · Briefing
         </div>
         <h1 className="font-display text-4xl mt-1" style={accentStyle}>
           {brand?.proposal_title || "Solução Técnica Apresentada"}

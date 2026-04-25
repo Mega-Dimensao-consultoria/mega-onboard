@@ -24,7 +24,7 @@ export function BrandHeader({
             </div>
           )}
           <div className="leading-tight min-w-0">
-            <div className="font-display text-lg font-semibold truncate">{brand?.nome_fantasia || "Mega Dimensão"}</div>
+            <div className="font-display text-lg font-semibold truncate">{brand?.nome_fantasia || "Prospekta"}</div>
             <div className="text-[11px] uppercase tracking-widest text-muted-foreground truncate">Prospekta · Onboarding</div>
           </div>
         </Link>

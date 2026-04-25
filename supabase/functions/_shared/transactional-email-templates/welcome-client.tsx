@@ -9,7 +9,7 @@ interface Props {
   portalUrl?: string
 }
 
-const WelcomeClientEmail = ({ name, portalUrl = 'https://mega-onboard.lovable.app/cliente' }: Props) => (
+const WelcomeClientEmail = ({ name, portalUrl = 'https://prospekta.megadimensao.com.br/cliente' }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
     <Preview>Bem-vindo à Prospekta — sua área do cliente está pronta</Preview>
@@ -38,5 +38,5 @@ export const template = {
   component: WelcomeClientEmail,
   subject: 'Bem-vindo à Prospekta',
   displayName: 'Boas-vindas ao cliente',
-  previewData: { name: 'Joana', portalUrl: 'https://mega-onboard.lovable.app/cliente' },
+  previewData: { name: 'Joana', portalUrl: 'https://prospekta.megadimensao.com.br/cliente' },
 } satisfies TemplateEntry
