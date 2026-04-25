@@ -13,6 +13,7 @@ import { CatalogPanel } from "@/components/consultor/CatalogPanel";
 import { ClientsPanel } from "@/components/consultor/ClientsPanel";
 import { ContractsPanel } from "@/components/consultor/ContractsPanel";
 import { ConsultorInvoicesPanel } from "@/components/consultor/ConsultorInvoicesPanel";
+import { BillingSettingsPanel } from "@/components/consultor/BillingSettingsPanel";
 import { PlanChangeRequestsPanel } from "@/components/consultor/PlanChangeRequestsPanel";
 import { AuditLogPanel } from "@/components/consultor/AuditLogPanel";
 import { HomeSectionsPanel } from "@/components/consultor/HomeSectionsPanel";
