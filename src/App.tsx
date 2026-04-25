@@ -13,7 +13,6 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { ClienteLayout } from "@/components/cliente/ClienteLayout";
 import ClienteHome from "./pages/cliente/ClienteHome.tsx";
 import Perfil from "./pages/cliente/Perfil.tsx";
-import ClientePlaceholder from "./pages/cliente/ClientePlaceholder.tsx";
 import Contratos from "./pages/cliente/Contratos.tsx";
 import ContratoDetalhe from "./pages/cliente/ContratoDetalhe.tsx";
 import Faturas from "./pages/cliente/Faturas.tsx";
