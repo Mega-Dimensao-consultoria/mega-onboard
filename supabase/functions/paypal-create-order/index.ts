@@ -95,8 +95,10 @@ Deno.serve(async (req) => {
     const amount = ((inv.total_cents || 0) / 100).toFixed(2);
     const currency = "BRL";
 
-    const accessToken = await getAccessToken();
-    const orderRes = await fetch(`${paypalBase()}/v2/checkout/orders`, {
+    const adminClient = createClient(supaUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const env = await getPaypalEnv(adminClient);
+    const accessToken = await getAccessToken(env);
+    const orderRes = await fetch(`${paypalBaseFor(env)}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -123,21 +125,19 @@ Deno.serve(async (req) => {
     const order = await orderRes.json();
     if (!orderRes.ok) {
       console.error("PayPal create order failed", order);
-      return new Response(JSON.stringify({ error: "PayPal create order failed", details: order }), {
+      return new Response(JSON.stringify({ error: "PayPal create order failed", details: order, env }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const approveLink = (order.links || []).find((l: { rel: string; href: string }) => l.rel === "approve")?.href;
 
-    // Persist intent (use service role to bypass RLS for INSERT)
-    const adminClient = createClient(supaUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     await adminClient.from("payment_intents").insert({
       invoice_id: inv.id,
       provider: "paypal",
       provider_ref: order.id,
       status: "pending",
-      raw_payload: order,
+      raw_payload: { ...order, _env: env },
     });
 
     return new Response(JSON.stringify({ order_id: order.id, approve_url: approveLink }), {
