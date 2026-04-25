@@ -27,6 +27,30 @@ export function ConsultorInvoicesPanel() {
   const [active, setActive] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [resending, setResending] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+
+  const triggerGenerate = async () => {
+    if (!confirm("Disparar geração de faturas agora? Será gerada uma fatura para cada item de contrato vencido hoje, e enviados lembretes pendentes.")) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("trigger-generate-invoices", { body: {} });
+      if (error) throw error;
+      const r = (data as { result?: { generated?: number; overdueMarked?: number; remindersSent?: number; errors?: string[] } } | null)?.result;
+      const generated = r?.generated ?? 0;
+      const overdue = r?.overdueMarked ?? 0;
+      const reminders = r?.remindersSent ?? 0;
+      const errs = r?.errors?.length ?? 0;
+      toast({
+        title: "Geração concluída",
+        description: `${generated} fatura(s) gerada(s), ${overdue} marcada(s) como vencida(s), ${reminders} lembrete(s) enviado(s)${errs ? ` · ${errs} erro(s)` : ""}.`,
+      });
+      await refresh();
+    } catch (e) {
+      toast({ title: "Falha ao gerar faturas", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const refresh = async () => {
     const { data } = await supabase.from("invoices").select("*").order("due_date", { ascending: false });
