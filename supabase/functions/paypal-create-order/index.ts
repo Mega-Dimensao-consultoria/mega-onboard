@@ -5,27 +5,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function getPaypalEnv(adminClient: ReturnType<typeof createClient>): Promise<"sandbox" | "live"> {
+type PaypalConfig = {
+  env: "sandbox" | "live";
+  client_id: string;
+  client_secret: string;
+};
+
+async function getPaypalConfig(adminClient: ReturnType<typeof createClient>): Promise<PaypalConfig> {
   const { data } = await adminClient
     .from("brand_settings")
-    .select("paypal_env")
+    .select("paypal_env, paypal_client_id, paypal_client_secret")
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  const env = (data as { paypal_env?: string } | null)?.paypal_env;
-  return env === "live" ? "live" : "sandbox";
+  const row = (data || {}) as { paypal_env?: string; paypal_client_id?: string; paypal_client_secret?: string };
+  const env: "sandbox" | "live" = row.paypal_env === "live" ? "live" : "sandbox";
+  const client_id = row.paypal_client_id || Deno.env.get("PAYPAL_CLIENT_ID") || "";
+  const client_secret = row.paypal_client_secret || Deno.env.get("PAYPAL_CLIENT_SECRET") || "";
+  if (!client_id || !client_secret) {
+    throw new Error("PayPal credentials not configured. Configure-as no painel do consultor → Faturas → Cobranças.");
+  }
+  return { env, client_id, client_secret };
 }
 
 function paypalBaseFor(env: "sandbox" | "live") {
   return env === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
 }
 
-async function getAccessToken(env: "sandbox" | "live") {
-  const id = Deno.env.get("PAYPAL_CLIENT_ID");
-  const secret = Deno.env.get("PAYPAL_CLIENT_SECRET");
-  if (!id || !secret) throw new Error("PayPal credentials not configured");
-  const auth = btoa(`${id}:${secret}`);
-  const res = await fetch(`${paypalBaseFor(env)}/v1/oauth2/token`, {
+async function getAccessToken(cfg: PaypalConfig) {
+  const auth = btoa(`${cfg.client_id}:${cfg.client_secret}`);
+  const res = await fetch(`${paypalBaseFor(cfg.env)}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${auth}`,
