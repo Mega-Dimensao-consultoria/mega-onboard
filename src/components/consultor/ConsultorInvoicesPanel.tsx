@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtMoney, fmtDate, invoiceStatusLabel, waLink, buildInvoiceCreatedMessage, buildInvoiceReminderMessage, buildInvoicePaidMessage } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
-import { Receipt, ExternalLink, CheckCircle2, MessageCircle, Mail, Bell } from "lucide-react";
+import { Receipt, ExternalLink, CheckCircle2, MessageCircle, Mail, Bell, RefreshCw } from "lucide-react";
 
 type Invoice = {
   id: string; client_id: string; total_cents: number; status: string;
