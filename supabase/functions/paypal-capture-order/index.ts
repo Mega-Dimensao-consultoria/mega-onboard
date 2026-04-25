@@ -88,8 +88,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const accessToken = await getAccessToken();
-    const capRes = await fetch(`${paypalBase()}/v2/checkout/orders/${orderId}/capture`, {
+    const adminClient = createClient(supaUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const env = await getPaypalEnv(adminClient);
+    const accessToken = await getAccessToken(env);
+    const capRes = await fetch(`${paypalBaseFor(env)}/v2/checkout/orders/${orderId}/capture`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -110,8 +112,6 @@ Deno.serve(async (req) => {
 
     const status = cap?.status || "COMPLETED";
     const isCompleted = status === "COMPLETED" || (cap?.purchase_units?.[0]?.payments?.captures?.[0]?.status === "COMPLETED");
-
-    const adminClient = createClient(supaUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     if (isCompleted) {
       await adminClient.from("invoices").update({
