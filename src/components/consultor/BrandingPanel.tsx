@@ -127,48 +127,6 @@ export function BrandingPanel({ brand, onSaved }: { brand: Brand | null; onSaved
           />
         </div>
 
-        <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-4">
-          <div>
-            <h2 className="font-display text-xl">Cobranças</h2>
-            <p className="text-xs text-muted-foreground mt-1">Configure como seus clientes pagarão as faturas.</p>
-          </div>
-          <div className="grid grid-cols-[160px_1fr] gap-3">
-            <div>
-              <Label>Tipo de chave Pix</Label>
-              <Select value={b.pix_key_type || ""} onValueChange={(v) => setB({ ...b, pix_key_type: v })}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cpf">CPF</SelectItem>
-                  <SelectItem value="cnpj">CNPJ</SelectItem>
-                  <SelectItem value="email">E-mail</SelectItem>
-                  <SelectItem value="phone">Telefone</SelectItem>
-                  <SelectItem value="random">Aleatória</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Chave Pix</Label>
-              <Input value={b.pix_key || ""} onChange={(e) => setB({ ...b, pix_key: e.target.value })} placeholder="sua chave Pix" />
-            </div>
-          </div>
-          <div className="border-t border-border/60 pt-4 space-y-2">
-            <Label>Ambiente do PayPal</Label>
-            <Select
-              value={b.paypal_env || "sandbox"}
-              onValueChange={(v) => setB({ ...b, paypal_env: v as "sandbox" | "live" })}
-            >
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sandbox">Sandbox (testes — sem cobrança real)</SelectItem>
-                <SelectItem value="live">Produção (pagamentos reais)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Em <strong>Sandbox</strong>, use credenciais do app de testes do PayPal Developer. Em <strong>Produção</strong>, use credenciais do app Live. As credenciais (Client ID e Secret) ficam nos secrets do projeto.
-            </p>
-          </div>
-        </div>
-
         <Button onClick={save} disabled={saving} className="w-full">{saving ? "Salvando..." : "Salvar alterações"}</Button>
       </div>
     </div>
