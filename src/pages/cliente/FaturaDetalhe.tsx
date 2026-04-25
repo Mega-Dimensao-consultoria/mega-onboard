@@ -69,9 +69,25 @@ export default function FaturaDetalhe() {
     QRCode.toDataURL(pixPayload, { width: 256, margin: 1 }).then(setPixQrDataUrl).catch(() => setPixQrDataUrl(null));
   }, [pixPayload]);
 
-  const paypalUrl = brand?.paypal_username
-    ? `https://www.paypal.com/paypalme/${brand.paypal_username}/${(inv?.total_cents || 0) / 100}`
-    : null;
+  const startPaypal = async () => {
+    if (!inv) return;
+    if (isImpersonating) return toast({ title: "Modo visualização", description: "Saia do modo visualização para pagar.", variant: "destructive" });
+    setPaypalLoading(true);
+    try {
+      const returnUrl = `${window.location.origin}${window.location.pathname}?paypal=return`;
+      const cancelUrl = `${window.location.origin}${window.location.pathname}?paypal=cancel`;
+      const { data, error } = await supabase.functions.invoke("paypal-create-order", {
+        body: { invoice_id: inv.id, return_url: returnUrl, cancel_url: cancelUrl },
+      });
+      if (error) throw error;
+      const approveUrl = (data as { approve_url?: string })?.approve_url;
+      if (!approveUrl) throw new Error("Link de pagamento não retornado pelo PayPal.");
+      window.location.href = approveUrl;
+    } catch (e) {
+      toast({ title: "Erro ao iniciar PayPal", description: e instanceof Error ? e.message : "", variant: "destructive" });
+      setPaypalLoading(false);
+    }
+  };
 
   const copyPix = async () => {
     if (!pixPayload) {
@@ -190,12 +206,16 @@ export default function FaturaDetalhe() {
           <Card>
             <CardHeader><CardTitle>Pagar com PayPal</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              {paypalUrl ? (
-                <>
-                  <p className="text-sm text-muted-foreground">Você será redirecionado para o PayPal já com o valor preenchido.</p>
-                  <Button asChild className="w-full"><a href={paypalUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4 mr-2" /> Abrir PayPal</a></Button>
-                </>
-              ) : <p className="text-sm text-muted-foreground">PayPal ainda não configurado pelo consultor.</p>}
+              <p className="text-sm text-muted-foreground">
+                Você será redirecionado ao PayPal com o valor de <strong>{fmtMoney(inv.total_cents)}</strong> já preenchido. Após confirmar o pagamento, voltará para esta página automaticamente.
+              </p>
+              <Button onClick={startPaypal} disabled={paypalLoading || paypalCapturing} className="w-full">
+                {paypalLoading || paypalCapturing ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {paypalCapturing ? "Confirmando pagamento…" : "Conectando…"}</>
+                ) : (
+                  <><ExternalLink className="h-4 w-4 mr-2" /> Pagar com PayPal</>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
