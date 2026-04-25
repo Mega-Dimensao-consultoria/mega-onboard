@@ -44,7 +44,7 @@ export function generateBRD(
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
-  doc.text(brand?.nome_fantasia || "Mega Dimensão", M, 40);
+  doc.text(brand?.nome_fantasia || "Prospekta", M, 40);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   const headerLines = [
@@ -141,7 +141,7 @@ export function generateBRD(
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(140);
-    doc.text(`${brand?.nome_fantasia || "Mega Dimensão"} · Prospekta BRD`, M, H - 20);
+    doc.text(`${brand?.nome_fantasia || "Prospekta"} · Prospekta BRD`, M, H - 20);
     doc.text(`Página ${i}/${pageCount}`, W - M, H - 20, { align: "right" });
   }
 
