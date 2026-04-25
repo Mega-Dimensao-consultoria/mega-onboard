@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
       provider: "paypal",
       provider_ref: order.id,
       status: "pending",
-      raw_payload: { ...order, _env: env },
+      raw_payload: { ...order, _env: cfg.env },
     });
 
     return new Response(JSON.stringify({ order_id: order.id, approve_url: approveLink }), {
