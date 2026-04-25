@@ -1,0 +1,186 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useBrand } from "@/hooks/useBrand";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { Eye, EyeOff } from "lucide-react";
+
+type Form = {
+  pix_key_type: string;
+  pix_key: string;
+  paypal_env: "sandbox" | "live";
+  paypal_client_id: string;
+  paypal_client_secret: string;
+};
+
+export function BillingSettingsPanel() {
+  const { brand, refresh } = useBrand();
+  const [f, setF] = useState<Form>({
+    pix_key_type: "",
+    pix_key: "",
+    paypal_env: "sandbox",
+    paypal_client_id: "",
+    paypal_client_secret: "",
+  });
+  const [showSecret, setShowSecret] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!brand) return;
+    setF({
+      pix_key_type: brand.pix_key_type || "",
+      pix_key: brand.pix_key || "",
+      paypal_env: (brand.paypal_env as "sandbox" | "live") || "sandbox",
+      paypal_client_id: brand.paypal_client_id || "",
+      paypal_client_secret: brand.paypal_client_secret || "",
+    });
+  }, [brand]);
+
+  const save = async () => {
+    if (!brand?.id) {
+      toast({ title: "Configure a marca primeiro", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("brand_settings")
+        .update({
+          pix_key_type: f.pix_key_type || null,
+          pix_key: f.pix_key || null,
+          paypal_env: f.paypal_env,
+          paypal_client_id: f.paypal_client_id || null,
+          paypal_client_secret: f.paypal_client_secret || null,
+        })
+        .eq("id", brand.id);
+      if (error) throw error;
+      toast({ title: "Configurações de cobrança salvas!" });
+      refresh();
+    } catch (e) {
+      toast({
+        title: "Erro ao salvar",
+        description: e instanceof Error ? e.message : "",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="grid lg:grid-cols-2 gap-6">
+      {/* PIX */}
+      <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-xl">Pix</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Os dados aparecem na tela de pagamento da fatura para o cliente.
+          </p>
+        </div>
+        <div>
+          <Label>Tipo de chave</Label>
+          <Select
+            value={f.pix_key_type}
+            onValueChange={(v) => setF({ ...f, pix_key_type: v })}
+          >
+            <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cpf">CPF</SelectItem>
+              <SelectItem value="cnpj">CNPJ</SelectItem>
+              <SelectItem value="email">E-mail</SelectItem>
+              <SelectItem value="phone">Telefone</SelectItem>
+              <SelectItem value="random">Aleatória</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Chave Pix</Label>
+          <Input
+            value={f.pix_key}
+            onChange={(e) => setF({ ...f, pix_key: e.target.value })}
+            placeholder="sua chave Pix"
+          />
+        </div>
+      </div>
+
+      {/* PayPal */}
+      <div className="bg-card rounded-2xl border border-border/60 p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-xl">PayPal</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Pagamento via API: ao clicar em <strong>Pagar com PayPal</strong>, o cliente é redirecionado já com o valor preenchido e a confirmação volta automaticamente.
+          </p>
+        </div>
+
+        <div>
+          <Label>Ambiente</Label>
+          <Select
+            value={f.paypal_env}
+            onValueChange={(v) => setF({ ...f, paypal_env: v as "sandbox" | "live" })}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sandbox">Sandbox (testes — sem cobrança real)</SelectItem>
+              <SelectItem value="live">Produção (pagamentos reais)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Cada ambiente tem suas próprias credenciais. Crie um app em{" "}
+            <a
+              href="https://developer.paypal.com/dashboard/applications"
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
+              PayPal Developer
+            </a>
+            .
+          </p>
+        </div>
+
+        <div>
+          <Label>Client ID</Label>
+          <Input
+            value={f.paypal_client_id}
+            onChange={(e) => setF({ ...f, paypal_client_id: e.target.value })}
+            placeholder="A... (string longa do PayPal Developer)"
+            className="font-mono text-xs"
+          />
+        </div>
+
+        <div>
+          <Label>Client Secret</Label>
+          <div className="flex gap-2">
+            <Input
+              type={showSecret ? "text" : "password"}
+              value={f.paypal_client_secret}
+              onChange={(e) => setF({ ...f, paypal_client_secret: e.target.value })}
+              placeholder="EL... (chave secreta)"
+              className="font-mono text-xs"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              onClick={() => setShowSecret((s) => !s)}
+            >
+              {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Armazenado de forma segura. Apenas o consultor enxerga este campo.
+          </p>
+        </div>
+      </div>
+
+      <div className="lg:col-span-2">
+        <Button onClick={save} disabled={saving} className="w-full">
+          {saving ? "Salvando..." : "Salvar configurações de cobrança"}
+        </Button>
+      </div>
+    </div>
+  );
+}

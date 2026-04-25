@@ -44,6 +44,8 @@ export type Brand = {
   pix_key?: string | null;
   pix_key_type?: string | null;
   paypal_env?: "sandbox" | "live" | null;
+  paypal_client_id?: string | null;
+  paypal_client_secret?: string | null;
   // Hero
   hero_badge?: string | null;
   hero_title?: string | null;
@@ -77,13 +79,18 @@ export type Brand = {
 async function fetchBrand(): Promise<Brand | null> {
   const { data: sess } = await supabase.auth.getSession();
   if (sess?.session) {
+    // Consultor: SELECT * (inclui credenciais sensíveis). RLS bloqueia para não-consultor.
     const { data } = await supabase
       .from("brand_settings")
       .select("*")
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
-    return (data as unknown as Brand) ?? null;
+    if (data) return data as unknown as Brand;
+    // Cliente autenticado: usa RPC que omite credenciais sensíveis
+    const { data: rpc } = await supabase.rpc("get_brand_for_authenticated");
+    const row = Array.isArray(rpc) && rpc.length > 0 ? rpc[0] : null;
+    return (row as unknown as Brand) ?? null;
   }
   const { data } = await supabase.rpc("get_public_brand");
   const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
