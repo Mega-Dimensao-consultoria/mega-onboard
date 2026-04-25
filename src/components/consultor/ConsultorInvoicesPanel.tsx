@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtMoney, fmtDate, invoiceStatusLabel, waLink, buildInvoiceCreatedMessage, buildInvoiceReminderMessage, buildInvoicePaidMessage } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
-import { Receipt, ExternalLink, CheckCircle2, MessageCircle, Mail, Bell } from "lucide-react";
+import { Receipt, ExternalLink, CheckCircle2, MessageCircle, Mail, Bell, RefreshCw } from "lucide-react";
 
 type Invoice = {
   id: string; client_id: string; total_cents: number; status: string;
@@ -27,6 +27,30 @@ export function ConsultorInvoicesPanel() {
   const [active, setActive] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [resending, setResending] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+
+  const triggerGenerate = async () => {
+    if (!confirm("Disparar geração de faturas agora? Será gerada uma fatura para cada item de contrato vencido hoje, e enviados lembretes pendentes.")) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("trigger-generate-invoices", { body: {} });
+      if (error) throw error;
+      const r = (data as { result?: { generated?: number; overdueMarked?: number; remindersSent?: number; errors?: string[] } } | null)?.result;
+      const generated = r?.generated ?? 0;
+      const overdue = r?.overdueMarked ?? 0;
+      const reminders = r?.remindersSent ?? 0;
+      const errs = r?.errors?.length ?? 0;
+      toast({
+        title: "Geração concluída",
+        description: `${generated} fatura(s) gerada(s), ${overdue} marcada(s) como vencida(s), ${reminders} lembrete(s) enviado(s)${errs ? ` · ${errs} erro(s)` : ""}.`,
+      });
+      await refresh();
+    } catch (e) {
+      toast({ title: "Falha ao gerar faturas", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const refresh = async () => {
     const { data } = await supabase.from("invoices").select("*").order("due_date", { ascending: false });
@@ -156,14 +180,20 @@ export function ConsultorInvoicesPanel() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="font-display text-2xl">Faturas</h2>
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-          <TabsList>
-            <TabsTrigger value="all">Todas</TabsTrigger>
-            <TabsTrigger value="open">Abertas</TabsTrigger>
-            <TabsTrigger value="overdue">Vencidas</TabsTrigger>
-            <TabsTrigger value="paid">Pagas</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={triggerGenerate} disabled={generating}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${generating ? "animate-spin" : ""}`} />
+            {generating ? "Gerando…" : "Gerar faturas agora"}
+          </Button>
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+            <TabsList>
+              <TabsTrigger value="all">Todas</TabsTrigger>
+              <TabsTrigger value="open">Abertas</TabsTrigger>
+              <TabsTrigger value="overdue">Vencidas</TabsTrigger>
+              <TabsTrigger value="paid">Pagas</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {loading ? <Card><CardContent className="py-10 text-center text-muted-foreground">Carregando…</CardContent></Card>
