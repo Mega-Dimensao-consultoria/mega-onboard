@@ -78,7 +78,6 @@ export type Database = {
           logo_url: string | null
           nav_links: Json | null
           nome_fantasia: string | null
-          paypal_username: string | null
           pix_key: string | null
           pix_key_type: string | null
           primary_color: string | null
@@ -128,7 +127,6 @@ export type Database = {
           logo_url?: string | null
           nav_links?: Json | null
           nome_fantasia?: string | null
-          paypal_username?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
           primary_color?: string | null
@@ -178,7 +176,6 @@ export type Database = {
           logo_url?: string | null
           nav_links?: Json | null
           nome_fantasia?: string | null
-          paypal_username?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
           primary_color?: string | null
