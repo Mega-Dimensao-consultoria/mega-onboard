@@ -38,7 +38,7 @@ const InvoiceReminderEmail = ({ name, amount, dueDate, invoiceUrl, daysUntilDue,
             ) : null}
           </Section>
           <Section style={{ textAlign: 'center' as const, margin: '0 0 28px' }}>
-            <Button style={s.button} href={invoiceUrl ?? 'https://mega-onboard.lovable.app/cliente/faturas'}>
+            <Button style={s.button} href={invoiceUrl ?? 'https://prospekta.megadimensao.com.br/cliente/faturas'}>
               Pagar agora
             </Button>
           </Section>
@@ -56,5 +56,5 @@ export const template = {
   component: InvoiceReminderEmail,
   subject: (d) => d.overdue ? 'Fatura em atraso' : 'Lembrete: sua fatura vence em breve',
   displayName: 'Lembrete de fatura',
-  previewData: { name: 'Joana', amount: 'R$ 1.250,00', dueDate: '30/04/2026', daysUntilDue: 3, overdue: false, invoiceUrl: 'https://mega-onboard.lovable.app/cliente/faturas' },
+  previewData: { name: 'Joana', amount: 'R$ 1.250,00', dueDate: '30/04/2026', daysUntilDue: 3, overdue: false, invoiceUrl: 'https://prospekta.megadimensao.com.br/cliente/faturas' },
 } satisfies TemplateEntry

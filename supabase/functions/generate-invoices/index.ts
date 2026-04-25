@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
               amount: fmtMoney(subtotal),
               dueDate: fmtDate(due),
               period: `${fmtDate(today)} a ${fmtDate(periodEnd)}`,
-              invoiceUrl: `https://mega-onboard.lovable.app/cliente/faturas/${inv.id}`,
+              invoiceUrl: `https://prospekta.megadimensao.com.br/cliente/faturas/${inv.id}`,
             },
           },
         });
@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
             dueDate: fmtDate(due),
             daysUntilDue: Math.max(days, 0),
             overdue: days < 0,
-            invoiceUrl: `https://mega-onboard.lovable.app/cliente/faturas/${inv.id}`,
+            invoiceUrl: `https://prospekta.megadimensao.com.br/cliente/faturas/${inv.id}`,
           },
         },
       });

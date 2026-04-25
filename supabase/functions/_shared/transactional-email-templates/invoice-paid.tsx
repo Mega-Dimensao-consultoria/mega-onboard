@@ -33,7 +33,7 @@ const InvoicePaidEmail = ({ name, amount, paidAt, invoiceUrl, method }: Props) =
           ) : null}
         </Section>
         <Section style={{ textAlign: 'center' as const, margin: '0 0 28px' }}>
-          <Button style={s.buttonAccent} href={invoiceUrl ?? 'https://mega-onboard.lovable.app/cliente/faturas'}>
+          <Button style={s.buttonAccent} href={invoiceUrl ?? 'https://prospekta.megadimensao.com.br/cliente/faturas'}>
             Ver comprovante
           </Button>
         </Section>
@@ -47,5 +47,5 @@ export const template = {
   component: InvoicePaidEmail,
   subject: 'Pagamento confirmado — obrigado!',
   displayName: 'Pagamento confirmado',
-  previewData: { name: 'Joana', amount: 'R$ 1.250,00', paidAt: '22/04/2026', method: 'Pix', invoiceUrl: 'https://mega-onboard.lovable.app/cliente/faturas' },
+  previewData: { name: 'Joana', amount: 'R$ 1.250,00', paidAt: '22/04/2026', method: 'Pix', invoiceUrl: 'https://prospekta.megadimensao.com.br/cliente/faturas' },
 } satisfies TemplateEntry

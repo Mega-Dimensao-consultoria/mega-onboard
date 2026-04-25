@@ -34,7 +34,7 @@ const InvoiceCreatedEmail = ({ name, amount, dueDate, invoiceUrl, period }: Prop
           ) : null}
         </Section>
         <Section style={{ textAlign: 'center' as const, margin: '0 0 28px' }}>
-          <Button style={s.button} href={invoiceUrl ?? 'https://mega-onboard.lovable.app/cliente/faturas'}>
+          <Button style={s.button} href={invoiceUrl ?? 'https://prospekta.megadimensao.com.br/cliente/faturas'}>
             Ver fatura e pagar
           </Button>
         </Section>
@@ -52,5 +52,5 @@ export const template = {
   component: InvoiceCreatedEmail,
   subject: (d) => `Nova fatura disponível${d.amount ? ` — ${d.amount}` : ''}`,
   displayName: 'Nova fatura',
-  previewData: { name: 'Joana', amount: 'R$ 1.250,00', dueDate: '30/04/2026', period: '01/04 a 30/04', invoiceUrl: 'https://mega-onboard.lovable.app/cliente/faturas' },
+  previewData: { name: 'Joana', amount: 'R$ 1.250,00', dueDate: '30/04/2026', period: '01/04 a 30/04', invoiceUrl: 'https://prospekta.megadimensao.com.br/cliente/faturas' },
 } satisfies TemplateEntry
