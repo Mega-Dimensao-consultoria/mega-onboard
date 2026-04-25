@@ -137,6 +137,38 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={busy}>
                   {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Entrar
                 </Button>
+                <button
+                  type="button"
+                  className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline w-full text-center"
+                  onClick={async () => {
+                    try {
+                      emailSchema.parse(lEmail);
+                    } catch {
+                      toast({
+                        title: "Informe seu email",
+                        description: "Digite o email da conta para receber o link de redefinição.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setBusy(true);
+                    const { error } = await supabase.auth.resetPasswordForEmail(lEmail, {
+                      redirectTo: `${window.location.origin}/redefinir-senha`,
+                    });
+                    setBusy(false);
+                    if (error) {
+                      toast({ title: "Falha ao enviar", description: error.message, variant: "destructive" });
+                      return;
+                    }
+                    toast({
+                      title: "Link enviado",
+                      description: "Se o email existir, você receberá um link para redefinir a senha.",
+                    });
+                  }}
+                  disabled={busy}
+                >
+                  Esqueci minha senha
+                </button>
               </form>
             </TabsContent>
 

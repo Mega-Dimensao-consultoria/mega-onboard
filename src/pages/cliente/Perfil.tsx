@@ -17,6 +17,7 @@ import { Loader2, Receipt } from "lucide-react";
 import { Link } from "react-router-dom";
 import { fmtMoney, fmtDate } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
+import { AlterarSenhaCard } from "@/components/AlterarSenhaCard";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Nome muito curto").max(120),
@@ -318,6 +319,8 @@ export default function Perfil() {
 
         <Button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar alterações"}</Button>
       </form>
+
+      {!isImpersonating && <AlterarSenhaCard />}
 
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" /> Histórico de pagamentos</CardTitle></CardHeader>

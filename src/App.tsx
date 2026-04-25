@@ -22,6 +22,7 @@ import Servicos from "./pages/cliente/Servicos.tsx";
 import Plano from "./pages/cliente/Plano.tsx";
 import Projetos from "./pages/cliente/Projetos.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
+import RedefinirSenha from "./pages/RedefinirSenha.tsx";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/solucao/:id" element={<PublicSolution />} />
           <Route path="/solucao/:id/aceite" element={<AceiteProposta />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
 
 
           <Route path="/cliente" element={<RequireAuth role="cliente"><ClienteLayout /></RequireAuth>}>
