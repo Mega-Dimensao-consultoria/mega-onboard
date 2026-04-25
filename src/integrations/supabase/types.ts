@@ -78,6 +78,8 @@ export type Database = {
           logo_url: string | null
           nav_links: Json | null
           nome_fantasia: string | null
+          paypal_client_id: string | null
+          paypal_client_secret: string | null
           paypal_env: string
           pix_key: string | null
           pix_key_type: string | null
@@ -128,6 +130,8 @@ export type Database = {
           logo_url?: string | null
           nav_links?: Json | null
           nome_fantasia?: string | null
+          paypal_client_id?: string | null
+          paypal_client_secret?: string | null
           paypal_env?: string
           pix_key?: string | null
           pix_key_type?: string | null
@@ -178,6 +182,8 @@ export type Database = {
           logo_url?: string | null
           nav_links?: Json | null
           nome_fantasia?: string | null
+          paypal_client_id?: string | null
+          paypal_client_secret?: string | null
           paypal_env?: string
           pix_key?: string | null
           pix_key_type?: string | null
@@ -993,6 +999,58 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_brand_for_authenticated: {
+        Args: never
+        Returns: {
+          accent_color: string
+          auth_accent_color: string
+          auth_image_url: string
+          auth_subtitle: string
+          auth_title: string
+          background_color: string
+          body_font: string
+          client_accent_color: string
+          client_background_color: string
+          client_foreground_color: string
+          client_login_cta: string
+          client_logo_url: string
+          client_primary_color: string
+          client_secondary_color: string
+          cnpj: string
+          created_at: string
+          email: string
+          endereco: string
+          footer_links: Json
+          footer_text: string
+          foreground_color: string
+          heading_font: string
+          hero_background_url: string
+          hero_badge: string
+          hero_cta_label: string
+          hero_overlay_opacity: number
+          hero_subtitle: string
+          hero_title: string
+          id: string
+          logo_url: string
+          nav_links: Json
+          nome_fantasia: string
+          paypal_env: string
+          pix_key: string
+          pix_key_type: string
+          primary_color: string
+          proposal_accent_color: string
+          proposal_after_accept: string
+          proposal_intro: string
+          proposal_title: string
+          razao_social: string
+          secondary_color: string
+          site_description: string
+          site_title: string
+          success_message: string
+          success_title: string
+          telefone: string
+        }[]
       }
       get_public_brand: {
         Args: never
