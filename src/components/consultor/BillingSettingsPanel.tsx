@@ -12,7 +12,6 @@ type Form = {
   pix_key_type: string;
   pix_key: string;
   paypal_env: "sandbox" | "live";
-  paypal_client_id: string;
 };
 
 export function BillingSettingsPanel() {
@@ -21,7 +20,6 @@ export function BillingSettingsPanel() {
     pix_key_type: "",
     pix_key: "",
     paypal_env: "sandbox",
-    paypal_client_id: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -31,7 +29,6 @@ export function BillingSettingsPanel() {
       pix_key_type: brand.pix_key_type || "",
       pix_key: brand.pix_key || "",
       paypal_env: (brand.paypal_env as "sandbox" | "live") || "sandbox",
-      paypal_client_id: brand.paypal_client_id || "",
     });
   }, [brand]);
 
@@ -48,7 +45,6 @@ export function BillingSettingsPanel() {
           pix_key_type: f.pix_key_type || null,
           pix_key: f.pix_key || null,
           paypal_env: f.paypal_env,
-          paypal_client_id: f.paypal_client_id || null,
         })
         .eq("id", brand.id);
       if (error) throw error;
@@ -136,35 +132,19 @@ export function BillingSettingsPanel() {
           </p>
         </div>
 
-        <div>
-          <Label>Client ID (opcional, público)</Label>
-          <Input
-            value={f.paypal_client_id}
-            onChange={(e) => setF({ ...f, paypal_client_id: e.target.value })}
-            placeholder="A... (string longa do PayPal Developer)"
-            className="font-mono text-xs"
-          />
-          <p className="text-[11px] text-muted-foreground mt-1">
-            Se preferir, deixe em branco e configure também o Client ID como
-            secret <code>PAYPAL_CLIENT_ID</code>.
-          </p>
-        </div>
-
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-3 flex gap-3">
           <ShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
-            <p className="font-medium">Client Secret é gerenciado em local seguro</p>
+            <p className="font-medium">Credenciais gerenciadas em local seguro</p>
             <p className="text-muted-foreground">
-              Para alterar a senha do PayPal (Client Secret), abra o painel
-              do Lovable Cloud nesse projeto e edite os secrets:
+              Client ID e Client Secret do PayPal ficam armazenados como secrets no Lovable Cloud:
             </p>
             <ul className="text-muted-foreground list-disc pl-5">
-              <li><code>PAYPAL_CLIENT_SECRET</code> — obrigatório</li>
-              <li><code>PAYPAL_CLIENT_ID</code> — opcional (sobrescreve o campo acima)</li>
+              <li><code>PAYPAL_CLIENT_ID</code></li>
+              <li><code>PAYPAL_CLIENT_SECRET</code></li>
             </ul>
             <p className="text-muted-foreground">
-              Caminho: <em>Lovable → Cloud → Secrets</em>. Após salvar, as
-              edge functions de pagamento já usam o novo valor automaticamente.
+              Caminho: <em>Lovable → Cloud → Secrets</em>. Ao trocar entre Sandbox e Produção, atualize os dois secrets com as credenciais do app correspondente no PayPal Developer e selecione o ambiente acima.
             </p>
           </div>
         </div>
