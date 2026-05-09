@@ -20,7 +20,6 @@ export function BillingSettingsPanel() {
     pix_key_type: "",
     pix_key: "",
     paypal_env: "sandbox",
-    paypal_client_id: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -30,7 +29,6 @@ export function BillingSettingsPanel() {
       pix_key_type: brand.pix_key_type || "",
       pix_key: brand.pix_key || "",
       paypal_env: (brand.paypal_env as "sandbox" | "live") || "sandbox",
-      paypal_client_id: brand.paypal_client_id || "",
     });
   }, [brand]);
 
@@ -47,7 +45,6 @@ export function BillingSettingsPanel() {
           pix_key_type: f.pix_key_type || null,
           pix_key: f.pix_key || null,
           paypal_env: f.paypal_env,
-          paypal_client_id: f.paypal_client_id || null,
         })
         .eq("id", brand.id);
       if (error) throw error;
