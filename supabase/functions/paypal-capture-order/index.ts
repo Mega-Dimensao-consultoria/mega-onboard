@@ -14,15 +14,15 @@ type PaypalConfig = {
 async function getPaypalConfig(adminClient: ReturnType<typeof createClient>): Promise<PaypalConfig> {
   const { data } = await adminClient
     .from("brand_settings")
-    .select("paypal_env, paypal_client_id, paypal_client_secret")
+    .select("paypal_env, paypal_client_id")
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  const row = (data || {}) as { paypal_env?: string; paypal_client_id?: string; paypal_client_secret?: string };
+  const row = (data || {}) as { paypal_env?: string; paypal_client_id?: string };
   const env: "sandbox" | "live" = row.paypal_env === "live" ? "live" : "sandbox";
-  const client_id = row.paypal_client_id || Deno.env.get("PAYPAL_CLIENT_ID") || "";
-  const client_secret = row.paypal_client_secret || Deno.env.get("PAYPAL_CLIENT_SECRET") || "";
-  if (!client_id || !client_secret) throw new Error("PayPal credentials not configured");
+  const client_id = Deno.env.get("PAYPAL_CLIENT_ID") || row.paypal_client_id || "";
+  const client_secret = Deno.env.get("PAYPAL_CLIENT_SECRET") || "";
+  if (!client_id || !client_secret) throw new Error("PayPal credentials not configured (set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET secrets)");
   return { env, client_id, client_secret };
 }
 
