@@ -45,7 +45,6 @@ export type Brand = {
   pix_key_type?: string | null;
   paypal_env?: "sandbox" | "live" | null;
   paypal_client_id?: string | null;
-  paypal_client_secret?: string | null;
   // Hero
   hero_badge?: string | null;
   hero_title?: string | null;

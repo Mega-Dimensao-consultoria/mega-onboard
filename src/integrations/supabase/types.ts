@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -79,7 +94,6 @@ export type Database = {
           nav_links: Json | null
           nome_fantasia: string | null
           paypal_client_id: string | null
-          paypal_client_secret: string | null
           paypal_env: string
           pix_key: string | null
           pix_key_type: string | null
@@ -131,7 +145,6 @@ export type Database = {
           nav_links?: Json | null
           nome_fantasia?: string | null
           paypal_client_id?: string | null
-          paypal_client_secret?: string | null
           paypal_env?: string
           pix_key?: string | null
           pix_key_type?: string | null
@@ -183,7 +196,6 @@ export type Database = {
           nav_links?: Json | null
           nome_fantasia?: string | null
           paypal_client_id?: string | null
-          paypal_client_secret?: string | null
           paypal_env?: string
           pix_key?: string | null
           pix_key_type?: string | null
@@ -1129,6 +1141,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { _uid: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1145,6 +1158,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      submit_public_lead: {
+        Args: { p_answers: Json; p_lead: Json }
+        Returns: string
       }
     }
     Enums: {

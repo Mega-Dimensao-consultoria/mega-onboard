@@ -108,7 +108,6 @@ const Index = () => {
       const nameId = findByLabel("nome completo") || findByLabel("razão social");
       const solId = findByLabel("qual solução");
 
-      // Generate the lead id client-side so we don't need SELECT permission after insert
       const leadId = crypto.randomUUID();
       const lead = {
         id: leadId,
@@ -118,24 +117,22 @@ const Index = () => {
         solution_type: solId ? (answers[solId] as string) : null,
       };
 
-      const { error: leadErr } = await supabase.from("leads").insert(lead);
-      if (leadErr) throw leadErr;
-
       const visibleAll = questions.filter(isVisible);
-      const rows = visibleAll
+      const answerRows = visibleAll
         .filter((q) => answers[q.id] !== undefined)
         .map((q) => ({
-          lead_id: leadId,
           question_id: q.id,
           question_label: q.label,
           answer: Array.isArray(answers[q.id])
             ? (answers[q.id] as string[]).join(", ")
             : String(answers[q.id]),
         }));
-      if (rows.length) {
-        const { error: ansErr } = await supabase.from("lead_answers").insert(rows);
-        if (ansErr) throw ansErr;
-      }
+
+      const { error: rpcErr } = await supabase.rpc("submit_public_lead", {
+        p_lead: lead,
+        p_answers: answerRows,
+      });
+      if (rpcErr) throw rpcErr;
 
       setDone(true);
     } catch (e) {

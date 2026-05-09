@@ -6,14 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 type Form = {
   pix_key_type: string;
   pix_key: string;
   paypal_env: "sandbox" | "live";
   paypal_client_id: string;
-  paypal_client_secret: string;
 };
 
 export function BillingSettingsPanel() {
@@ -23,9 +22,7 @@ export function BillingSettingsPanel() {
     pix_key: "",
     paypal_env: "sandbox",
     paypal_client_id: "",
-    paypal_client_secret: "",
   });
-  const [showSecret, setShowSecret] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -35,7 +32,6 @@ export function BillingSettingsPanel() {
       pix_key: brand.pix_key || "",
       paypal_env: (brand.paypal_env as "sandbox" | "live") || "sandbox",
       paypal_client_id: brand.paypal_client_id || "",
-      paypal_client_secret: brand.paypal_client_secret || "",
     });
   }, [brand]);
 
@@ -53,7 +49,6 @@ export function BillingSettingsPanel() {
           pix_key: f.pix_key || null,
           paypal_env: f.paypal_env,
           paypal_client_id: f.paypal_client_id || null,
-          paypal_client_secret: f.paypal_client_secret || null,
         })
         .eq("id", brand.id);
       if (error) throw error;
@@ -142,37 +137,36 @@ export function BillingSettingsPanel() {
         </div>
 
         <div>
-          <Label>Client ID</Label>
+          <Label>Client ID (opcional, público)</Label>
           <Input
             value={f.paypal_client_id}
             onChange={(e) => setF({ ...f, paypal_client_id: e.target.value })}
             placeholder="A... (string longa do PayPal Developer)"
             className="font-mono text-xs"
           />
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Se preferir, deixe em branco e configure também o Client ID como
+            secret <code>PAYPAL_CLIENT_ID</code>.
+          </p>
         </div>
 
-        <div>
-          <Label>Client Secret</Label>
-          <div className="flex gap-2">
-            <Input
-              type={showSecret ? "text" : "password"}
-              value={f.paypal_client_secret}
-              onChange={(e) => setF({ ...f, paypal_client_secret: e.target.value })}
-              placeholder="EL... (chave secreta)"
-              className="font-mono text-xs"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              onClick={() => setShowSecret((s) => !s)}
-            >
-              {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-3 flex gap-3">
+          <ShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <p className="font-medium">Client Secret é gerenciado em local seguro</p>
+            <p className="text-muted-foreground">
+              Para alterar a senha do PayPal (Client Secret), abra o painel
+              do Lovable Cloud nesse projeto e edite os secrets:
+            </p>
+            <ul className="text-muted-foreground list-disc pl-5">
+              <li><code>PAYPAL_CLIENT_SECRET</code> — obrigatório</li>
+              <li><code>PAYPAL_CLIENT_ID</code> — opcional (sobrescreve o campo acima)</li>
+            </ul>
+            <p className="text-muted-foreground">
+              Caminho: <em>Lovable → Cloud → Secrets</em>. Após salvar, as
+              edge functions de pagamento já usam o novo valor automaticamente.
+            </p>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            Armazenado de forma segura. Apenas o consultor enxerga este campo.
-          </p>
         </div>
       </div>
 
