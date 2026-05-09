@@ -12,7 +12,6 @@ type Form = {
   pix_key_type: string;
   pix_key: string;
   paypal_env: "sandbox" | "live";
-  paypal_client_id: string;
 };
 
 export function BillingSettingsPanel() {
