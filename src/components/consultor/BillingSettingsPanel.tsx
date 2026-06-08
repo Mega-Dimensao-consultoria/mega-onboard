@@ -33,10 +33,15 @@ export function BillingSettingsPanel() {
 
   useEffect(() => {
     if (!brand) return;
+    const whm = (brand as any).whm_config || {};
     setF({
       pix_key_type: brand.pix_key_type || "",
       pix_key: brand.pix_key || "",
       paypal_env: (brand.paypal_env as "sandbox" | "live") || "sandbox",
+      whm_host: whm.host || "",
+      whm_user: whm.user || "",
+      whm_api_token: whm.api_token || "",
+      whm_port: whm.port || "2087",
     });
   }, [brand]);
 
@@ -53,10 +58,16 @@ export function BillingSettingsPanel() {
           pix_key_type: f.pix_key_type || null,
           pix_key: f.pix_key || null,
           paypal_env: f.paypal_env,
+          whm_config: {
+            host: f.whm_host,
+            user: f.whm_user,
+            api_token: f.whm_api_token,
+            port: f.whm_port,
+          } as any,
         })
         .eq("id", brand.id);
       if (error) throw error;
-      toast({ title: "Configurações de cobrança salvas!" });
+      toast({ title: "Configurações salvas!" });
       refresh();
     } catch (e) {
       toast({
