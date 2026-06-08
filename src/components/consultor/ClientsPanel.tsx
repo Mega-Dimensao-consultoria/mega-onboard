@@ -53,6 +53,7 @@ export function ClientsPanel() {
 
   const openDetail = async (c: Client) => {
     setSelected(c);
+    setCpanelUserEdit((c as any).cpanel_username || "");
     setDetailLoading(true);
     setContracts([]); setInvoices([]);
     const [{ data: cs }, { data: is }] = await Promise.all([
@@ -62,6 +63,38 @@ export function ClientsPanel() {
     setContracts((cs as ContractRow[]) || []);
     setInvoices((is as InvoiceRow[]) || []);
     setDetailLoading(false);
+  };
+
+  const updateCpanelUser = async () => {
+    if (!selected) return;
+    setWhmBusy(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ cpanel_username: cpanelUserEdit || null }).eq("id", selected.id);
+      if (error) throw error;
+      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, cpanel_username: cpanelUserEdit } : c));
+      setSelected({ ...selected, cpanel_username: cpanelUserEdit } as any);
+      toast({ title: "Usuário cPanel atualizado" });
+    } catch (e) {
+      toast({ title: "Erro ao atualizar", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setWhmBusy(false);
+    }
+  };
+
+  const whmAction = async (action: string) => {
+    if (!selected || !(selected as any).cpanel_username) return;
+    setWhmBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action, cpanel_user: (selected as any).cpanel_username }
+      });
+      if (error) throw error;
+      toast({ title: "Comando enviado", description: `Ação ${action} processada pelo WHM.` });
+    } catch (e) {
+      toast({ title: "Erro WHM", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setWhmBusy(false);
+    }
   };
 
   const impersonate = (c: Client) => {
