@@ -229,6 +229,30 @@ export function BillingSettingsPanel() {
           </div>
         </div>
 
+        <div className="grid sm:grid-cols-2 gap-6 pt-4 border-t border-border/40">
+          <div className="flex items-center justify-between gap-3 bg-secondary/30 p-4 rounded-xl">
+            <div>
+              <Label className="font-medium">Provisão Automática</Label>
+              <p className="text-[10px] text-muted-foreground">Criar conta cPanel após pagamento da primeira fatura.</p>
+            </div>
+            <Switch 
+              checked={f.whm_auto_provision} 
+              onCheckedChange={(v) => setF({ ...f, whm_auto_provision: v })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3 bg-secondary/30 p-4 rounded-xl">
+            <div>
+              <Label className="font-medium">Suspensão Automática</Label>
+              <p className="text-[10px] text-muted-foreground">Suspender conta no cPanel se houver faturas vencidas.</p>
+            </div>
+            <Switch 
+              checked={f.whm_auto_suspend} 
+              onCheckedChange={(v) => setF({ ...f, whm_auto_suspend: v })}
+            />
+          </div>
+        </div>
+
         <div className="rounded-xl border border-blue-500/40 bg-blue-500/5 p-3 flex gap-3">
           <ShieldCheck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
           <div className="text-xs space-y-1 text-muted-foreground">
