@@ -12,6 +12,10 @@ type Form = {
   pix_key_type: string;
   pix_key: string;
   paypal_env: "sandbox" | "live";
+  whm_host: string;
+  whm_user: string;
+  whm_api_token: string;
+  whm_port: string;
 };
 
 export function BillingSettingsPanel() {
@@ -20,6 +24,10 @@ export function BillingSettingsPanel() {
     pix_key_type: "",
     pix_key: "",
     paypal_env: "sandbox",
+    whm_host: "",
+    whm_user: "",
+    whm_api_token: "",
+    whm_port: "2087",
   });
   const [saving, setSaving] = useState(false);
 
