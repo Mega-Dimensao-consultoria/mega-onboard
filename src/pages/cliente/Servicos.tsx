@@ -219,6 +219,15 @@ export default function Servicos() {
         </section>
       )}
 
+        </TabsContent>
+
+        {profile.cpanel_username && (
+          <TabsContent value="emails" className="mt-0">
+            <EmailManager cpanelUser={profile.cpanel_username} />
+          </TabsContent>
+        )}
+      </Tabs>
+
       <section className="space-y-3">
         <h2 className="font-display text-2xl">Disponíveis</h2>
         {loading ? <Card><CardContent className="py-10 text-center text-muted-foreground">Carregando…</CardContent></Card>
