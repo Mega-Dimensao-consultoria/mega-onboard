@@ -78,6 +78,7 @@ export default function Perfil() {
           doc_number: docType === "cnpj" ? maskCNPJ(data?.doc_number || "") : docType === "cpf" ? maskCPF(data?.doc_number || "") : data?.doc_number || "",
           nome_fantasia: data?.nome_fantasia || "",
           razao_social: data?.razao_social || "",
+          cpanel_username: (data as any)?.cpanel_username || "",
           cep: maskCEP(data?.cep || ""),
           // fallback: se não houver logradouro estruturado, mostra o endereco antigo
           logradouro: data?.logradouro || data?.endereco || "",
