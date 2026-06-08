@@ -68,6 +68,7 @@ export default function Servicos() {
   const [adding, setAdding] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<ContractItem | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [profile, setProfile] = useState<{ cpanel_username: string | null }>({ cpanel_username: null });
 
   const loadItems = useCallback(async (contractId: string) => {
     const { data } = await supabase
