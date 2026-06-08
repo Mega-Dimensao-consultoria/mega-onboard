@@ -19,9 +19,10 @@ export default function ClienteHome() {
   const { clientId } = useClientId();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [profile, setProfile] = useState<{ name: string | null; cpanel_username: string | null }>({ name: null, cpanel_username: null });
+  const [profile, setProfile] = useState<{ name: string | null; cpanel_username: string | null; whm_data: any }>({ name: null, cpanel_username: null, whm_data: null });
   const [loading, setLoading] = useState(true);
   const [cpanelLoading, setCpanelLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     if (!clientId) return;
