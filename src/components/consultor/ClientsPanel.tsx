@@ -201,6 +201,7 @@ export function ClientsPanel() {
                     {selected.nome_fantasia && <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Nome fantasia" value={selected.nome_fantasia} />}
                     {selected.razao_social && <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Razão social" value={selected.razao_social} />}
                     <Field icon={<Hash className="h-3.5 w-3.5" />} label={selected.doc_type === "cnpj" ? "CNPJ" : selected.doc_type === "cpf" ? "CPF" : "Documento"} value={selected.doc_number} />
+                    <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Usuário cPanel" value={(selected as any).cpanel_username} />
                     <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={selected.email} />
                     <Field icon={<Phone className="h-3.5 w-3.5" />} label="Telefone" value={selected.telefone} />
                     {selected.endereco && <Field icon={<MapPin className="h-3.5 w-3.5" />} label="Endereço" value={selected.endereco} />}
