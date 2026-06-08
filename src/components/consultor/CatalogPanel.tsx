@@ -22,6 +22,7 @@ type Product = {
   price_cents: number;
   active: boolean;
   sort_order: number;
+  whm_package: string | null;
 };
 
 const typeLabel = { plan: "Plano", service: "Serviço", addon: "Add-on", custom: "Customizado" };
