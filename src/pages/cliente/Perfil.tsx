@@ -39,6 +39,7 @@ type Form = {
   full_name: string; telefone: string; email: string;
   doc_type: "cpf" | "cnpj" | "";
   doc_number: string; nome_fantasia: string; razao_social: string;
+  cpanel_username: string;
   cep: string; logradouro: string; numero: string; complemento: string;
   bairro: string; cidade: string; estado: string;
 };
