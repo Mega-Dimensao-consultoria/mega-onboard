@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtMoney, fmtDate, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
 import { ArrowRight, FileText, Receipt, AlertCircle, ExternalLink, HardDrive, Zap, ShieldCheck } from "lucide-react";
-import { Progress } from "@/components/ui/switch"; // Wait, Progress is not Switch. I need Progress component.
+import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 
 type Contract = { id: string; status: string; created_at: string };
