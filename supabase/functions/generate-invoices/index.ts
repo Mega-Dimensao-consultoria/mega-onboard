@@ -163,11 +163,14 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ============= 2. Marcar overdue + enviar lembretes =============
+  // ============= 2. Marcar overdue + enviar lembretes + Auto-suspensão =============
   const { data: openInvoices } = await supabase
     .from("invoices")
-    .select("id, client_id, total_cents, due_date, status")
+    .select("id, client_id, total_cents, due_date, status, profiles(cpanel_username)")
     .in("status", ["open", "overdue"]);
+
+  const { data: brandData } = await supabase.from("brand_settings").select("whm_auto_suspend").maybeSingle();
+  const autoSuspend = !!brandData?.whm_auto_suspend;
 
   for (const inv of openInvoices ?? []) {
     try {
