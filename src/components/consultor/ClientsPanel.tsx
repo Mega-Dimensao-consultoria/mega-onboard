@@ -55,6 +55,7 @@ export function ClientsPanel() {
   const openDetail = async (c: Client) => {
     setSelected(c);
     setCpanelUserEdit((c as any).cpanel_username || "");
+    setCpanelDomainEdit((c as any).cpanel_domain || "");
     setDetailLoading(true);
     setContracts([]); setInvoices([]);
     const [{ data: cs }, { data: is }] = await Promise.all([
