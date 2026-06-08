@@ -136,6 +136,75 @@ export default function ClienteHome() {
         />
       </div>
 
+      {profile.cpanel_username && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <HardDrive className="h-4 w-4 text-primary" /> Uso de Disco
+              </CardTitle>
+              {statsLoading && <Zap className="h-3 w-3 animate-pulse text-muted-foreground" />}
+            </CardHeader>
+            <CardContent>
+              {profile.whm_data?.summary?.data?.acct?.[0] ? (() => {
+                const acct = profile.whm_data.summary.data.acct[0];
+                const used = parseFloat(acct.diskused.replace("M", ""));
+                const limit = parseFloat(acct.disklimit.replace("M", ""));
+                const pct = Math.min(100, Math.round((used / limit) * 100));
+                return (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-xs">
+                      <span>{acct.diskused} de {acct.disklimit === "unlimited" ? "∞" : acct.disklimit}</span>
+                      <span className="font-semibold">{pct}%</span>
+                    </div>
+                    <Progress value={pct} className="h-2" />
+                  </div>
+                );
+              })() : <p className="text-xs text-muted-foreground">Carregando dados…</p>}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" /> Banda Mensal
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {profile.whm_data?.bandwidth?.data?.bandwidth?.[0] ? (() => {
+                const bw = profile.whm_data.bandwidth.data.bandwidth[0];
+                const used = bw.totalbytes / (1024 * 1024); // to MB
+                const limit = bw.limit / (1024 * 1024); // to MB
+                const pct = Math.min(100, Math.round((used / limit) * 100));
+                return (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-xs">
+                      <span>{used.toFixed(0)}MB de {bw.limit === 0 ? "∞" : `${limit.toFixed(0)}MB`}</span>
+                      <span className="font-semibold">{pct}%</span>
+                    </div>
+                    <Progress value={pct} className="h-2" />
+                  </div>
+                );
+              })() : <p className="text-xs text-muted-foreground">Carregando dados…</p>}
+            </CardContent>
+          </Card>
+
+          <Card className="hidden lg:block">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Status SSL
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
+                <CheckCircle2 className="h-4 w-4" /> Certificado Ativo
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">Protegendo seu domínio principal e subdomínios.</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="flex-row items-center justify-between"><CardTitle className="text-base">Contratos recentes</CardTitle><Button asChild variant="ghost" size="sm"><Link to="/cliente/contratos">Ver todos <ArrowRight className="h-3 w-3 ml-1" /></Link></Button></CardHeader>
