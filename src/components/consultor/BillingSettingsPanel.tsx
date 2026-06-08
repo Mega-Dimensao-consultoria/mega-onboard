@@ -71,6 +71,8 @@ export function BillingSettingsPanel() {
             api_token: f.whm_api_token,
             port: f.whm_port,
           } as any,
+          whm_auto_provision: f.whm_auto_provision,
+          whm_auto_suspend: f.whm_auto_suspend,
         })
         .eq("id", brand.id);
       if (error) throw error;
