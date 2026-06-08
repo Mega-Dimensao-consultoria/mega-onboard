@@ -17,6 +17,8 @@ type Form = {
   whm_user: string;
   whm_api_token: string;
   whm_port: string;
+  whm_auto_provision: boolean;
+  whm_auto_suspend: boolean;
 };
 
 export function BillingSettingsPanel() {
