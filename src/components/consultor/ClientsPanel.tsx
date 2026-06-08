@@ -297,20 +297,27 @@ export function ClientsPanel() {
                     <Shield className="h-4 w-4" /> Gestão cPanel / WHM
                   </h3>
                   <div className="space-y-4 bg-secondary/20 rounded-xl p-4">
-                    <div className="flex gap-2">
-                      <div className="flex-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
                         <Label className="text-[10px] uppercase">Usuário cPanel</Label>
                         <Input 
-                          size={1} 
                           value={cpanelUserEdit} 
                           onChange={(e) => setCpanelUserEdit(e.target.value)} 
                           placeholder="Ex: darthvader"
                         />
                       </div>
-                      <Button className="mt-6" size="sm" onClick={updateCpanelUser} disabled={whmBusy}>
-                        Salvar
-                      </Button>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] uppercase">Domínio Principal</Label>
+                        <Input 
+                          value={cpanelDomainEdit} 
+                          onChange={(e) => setCpanelDomainEdit(e.target.value)} 
+                          placeholder="Ex: darth.com"
+                        />
+                      </div>
                     </div>
+                    <Button className="w-full" size="sm" onClick={updateCpanelUser} disabled={whmBusy}>
+                      Salvar Dados de Acesso
+                    </Button>
 
                     {(selected as any)?.cpanel_username && (
                       <div className="grid grid-cols-2 gap-2">
