@@ -36,7 +36,9 @@ export function ClientsPanel() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [confirmDelete, setConfirmDelete] = useState<Client | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [deleting, setDeleting] = useState(false);
+  const [deleting, setDeleting] = false;
+  const [whmBusy, setWhmBusy] = useState(false);
+  const [cpanelUserEdit, setCpanelUserEdit] = useState("");
 
   useEffect(() => {
     (async () => {
