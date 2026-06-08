@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { fmtDate, fmtMoney, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
-import { Users, Search, Eye, Mail, Phone, MapPin, FileText, Receipt, Building2, User as UserIcon, Hash, Calendar, Trash2 } from "lucide-react";
+import { Users, Search, Eye, Mail, Phone, MapPin, FileText, Receipt, Building2, User as UserIcon, Hash, Calendar, Trash2, Shield, Lock, Unlock, LogOut } from "lucide-react";
 import { startImpersonate } from "@/lib/impersonate";
 import { toast } from "@/hooks/use-toast";
 
