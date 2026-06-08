@@ -182,6 +182,14 @@ Deno.serve(async (req) => {
       if (days < 0 && inv.status !== "overdue") {
         await supabase.from("invoices").update({ status: "overdue" }).eq("id", inv.id);
         summary.overdueMarked++;
+        
+        // Auto-suspensão se habilitada e houver usuário cpanel
+        const cpanelUser = (inv.profiles as any)?.cpanel_username;
+        if (autoSuspend && cpanelUser) {
+           await supabase.functions.invoke("whm-integration", {
+             body: { action: "suspend", cpanel_user: cpanelUser }
+           }).catch(e => console.error(`Falha auto-suspensão ${cpanelUser}:`, e));
+        }
       }
 
       // Enviar lembrete em D-3, D, D+1, D+7 (idempotente via key)
