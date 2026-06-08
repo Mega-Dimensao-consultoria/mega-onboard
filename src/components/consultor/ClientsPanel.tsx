@@ -71,11 +71,14 @@ export function ClientsPanel() {
     if (!selected) return;
     setWhmBusy(true);
     try {
-      const { error } = await supabase.from("profiles").update({ cpanel_username: cpanelUserEdit || null }).eq("id", selected.id);
+      const { error } = await supabase.from("profiles").update({ 
+        cpanel_username: cpanelUserEdit || null,
+        cpanel_domain: cpanelDomainEdit || null
+      }).eq("id", selected.id);
       if (error) throw error;
-      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, cpanel_username: cpanelUserEdit } : c));
-      setSelected({ ...selected, cpanel_username: cpanelUserEdit } as any);
-      toast({ title: "Usuário cPanel atualizado" });
+      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, cpanel_username: cpanelUserEdit, cpanel_domain: cpanelDomainEdit } : c));
+      setSelected({ ...selected, cpanel_username: cpanelUserEdit, cpanel_domain: cpanelDomainEdit } as any);
+      toast({ title: "Dados cPanel atualizados" });
     } catch (e) {
       toast({ title: "Erro ao atualizar", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally {
