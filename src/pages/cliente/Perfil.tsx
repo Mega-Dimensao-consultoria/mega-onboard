@@ -47,6 +47,7 @@ type Form = {
 const empty: Form = {
   full_name: "", telefone: "", email: "",
   doc_type: "", doc_number: "", nome_fantasia: "", razao_social: "",
+  cpanel_username: "",
   cep: "", logradouro: "", numero: "", complemento: "",
   bairro: "", cidade: "", estado: "",
 };
