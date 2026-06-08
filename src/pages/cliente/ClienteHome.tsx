@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtMoney, fmtDate, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
-import { ArrowRight, FileText, Receipt, AlertCircle, ExternalLink, HardDrive, Zap, ShieldCheck } from "lucide-react";
+import { ArrowRight, FileText, Receipt, AlertCircle, ExternalLink, HardDrive, Zap, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 
