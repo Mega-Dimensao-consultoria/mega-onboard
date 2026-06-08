@@ -66,7 +66,7 @@ export default function Perfil() {
   useEffect(() => {
     if (!clientId) return;
     supabase.from("profiles")
-      .select("full_name,telefone,email,doc_type,doc_number,nome_fantasia,razao_social,endereco,cep,logradouro,numero,complemento,bairro,cidade,estado")
+      .select("full_name,telefone,email,doc_type,doc_number,nome_fantasia,razao_social,endereco,cep,logradouro,numero,complemento,bairro,cidade,estado,cpanel_username")
       .eq("id", clientId).maybeSingle()
       .then(({ data }) => {
         const docType = (data?.doc_type as "cpf" | "cnpj" | null) || "";
