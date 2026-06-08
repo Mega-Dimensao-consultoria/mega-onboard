@@ -47,6 +47,8 @@ export function BillingSettingsPanel() {
       whm_user: whm.user || "",
       whm_api_token: whm.api_token || "",
       whm_port: whm.port || "2087",
+      whm_auto_provision: (brand as any).whm_auto_provision || false,
+      whm_auto_suspend: (brand as any).whm_auto_suspend || false,
     });
   }, [brand]);
 
