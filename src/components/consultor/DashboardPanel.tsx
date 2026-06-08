@@ -269,7 +269,8 @@ export function DashboardPanel() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 const accentClasses: Record<string, string> = {
