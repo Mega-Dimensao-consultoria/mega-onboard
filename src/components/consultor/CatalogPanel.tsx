@@ -36,7 +36,7 @@ const schema = z.object({
   price_cents: z.number().int().min(0),
 });
 
-const empty: Omit<Product, "id"> = { name: "", description: "", type: "plan", billing_cycle: "monthly", price_cents: 0, active: true, sort_order: 0 };
+const empty: Omit<Product, "id"> = { name: "", description: "", type: "plan", billing_cycle: "monthly", price_cents: 0, active: true, sort_order: 0, whm_package: "" };
 
 const fmt = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
