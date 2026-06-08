@@ -45,12 +45,43 @@ export default function ClienteHome() {
   const overdueCount = invoices.filter((i) => i.status === "overdue").length;
   const next = openInvoices[0];
 
+  const handleCPanelLogin = async () => {
+    if (!profile.cpanel_username) return;
+    setCpanelLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action: "get_login_link", cpanel_user: profile.cpanel_username }
+      });
+      if (error) throw error;
+      if (data?.result?.data?.url) {
+        window.open(data.result.data.url, "_blank");
+      } else {
+        throw new Error("Não foi possível gerar o link de acesso.");
+      }
+    } catch (e) {
+      toast({
+        title: "Erro ao acessar cPanel",
+        description: e instanceof Error ? e.message : "Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+    } finally {
+      setCpanelLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <div className="text-xs uppercase tracking-widest text-muted-foreground">Bem-vindo</div>
-        <h1 className="font-display text-4xl">{profileName || user?.user_metadata?.full_name || "Cliente"}</h1>
-        <p className="text-muted-foreground mt-1">Acompanhe seus contratos, faturas e serviços contratados.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">Bem-vindo</div>
+          <h1 className="font-display text-4xl">{profile.name || user?.user_metadata?.full_name || "Cliente"}</h1>
+          <p className="text-muted-foreground mt-1">Acompanhe seus contratos, faturas e serviços contratados.</p>
+        </div>
+        {profile.cpanel_username && (
+          <Button onClick={handleCPanelLogin} disabled={cpanelLoading} className="sm:w-auto w-full">
+            {cpanelLoading ? "Acessando..." : "Acessar cPanel"} <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {overdueCount > 0 && (
