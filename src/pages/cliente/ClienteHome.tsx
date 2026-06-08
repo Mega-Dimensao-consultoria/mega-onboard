@@ -48,6 +48,33 @@ export default function ClienteHome() {
   const overdueCount = invoices.filter((i) => i.status === "overdue").length;
   const next = openInvoices[0];
 
+  const fetchStats = async () => {
+    if (!profile.cpanel_username) return;
+    setStatsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action: "get_stats", cpanel_user: profile.cpanel_username }
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        const newData = data.result;
+        setProfile(p => ({ ...p, whm_data: newData }));
+        // Update database for caching
+        await supabase.from("profiles").update({ whm_data: newData }).eq("id", clientId!);
+      }
+    } catch (e) {
+      console.error("Stats error", e);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (profile.cpanel_username && !profile.whm_data) {
+      fetchStats();
+    }
+  }, [profile.cpanel_username]);
+
   const handleCPanelLogin = async () => {
     if (!profile.cpanel_username) return;
     setCpanelLoading(true);
