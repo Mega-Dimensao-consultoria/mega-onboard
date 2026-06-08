@@ -171,6 +171,11 @@ export function CatalogPanel() {
                   <Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })} />
                 </div>
               </div>
+              <div>
+                <Label>Pacote WHM (Opcional)</Label>
+                <Input value={form.whm_package || ""} onChange={(e) => setForm({ ...form, whm_package: e.target.value })} placeholder="Ex: bronze_plan" />
+                <p className="text-[10px] text-muted-foreground mt-1">Nome exato do pacote no seu WHM para provisionamento automático.</p>
+              </div>
               <div className="flex items-center gap-3">
                 <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
                 <span className="text-sm">Ativo (visível para clientes)</span>
