@@ -96,6 +96,12 @@ export function ConsultorInvoicesPanel() {
       }).catch(() => {});
     }
     toast({ title: "Fatura confirmada" });
+    
+    // Dispara processamento pós-pagamento (automação WHM)
+    supabase.functions.invoke("process-invoice-paid", {
+      body: { invoice_id: i.id }
+    }).catch(e => console.error("Process invoice paid failed", e));
+
     refresh();
     setActive(null);
   };

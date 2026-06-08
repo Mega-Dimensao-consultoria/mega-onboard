@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtMoney, fmtDate, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
-import { ArrowRight, FileText, Receipt, AlertCircle, ExternalLink } from "lucide-react";
+import { ArrowRight, FileText, Receipt, AlertCircle, ExternalLink, HardDrive, Zap, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 
 type Contract = { id: string; status: string; created_at: string };
@@ -18,9 +19,10 @@ export default function ClienteHome() {
   const { clientId } = useClientId();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [profile, setProfile] = useState<{ name: string | null; cpanel_username: string | null }>({ name: null, cpanel_username: null });
+  const [profile, setProfile] = useState<{ name: string | null; cpanel_username: string | null; whm_data: any }>({ name: null, cpanel_username: null, whm_data: null });
   const [loading, setLoading] = useState(true);
   const [cpanelLoading, setCpanelLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     if (!clientId) return;
@@ -28,13 +30,14 @@ export default function ClienteHome() {
       const [{ data: cs }, { data: is }, { data: prof }] = await Promise.all([
         supabase.from("contracts").select("id, status, created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("invoices").select("id, total_cents, status, due_date").eq("client_id", clientId).order("due_date", { ascending: true }),
-        supabase.from("profiles").select("full_name, nome_fantasia, cpanel_username").eq("id", clientId).maybeSingle(),
+        supabase.from("profiles").select("full_name, nome_fantasia, cpanel_username, whm_data").eq("id", clientId).maybeSingle(),
       ]);
       setContracts((cs as Contract[]) || []);
       setInvoices((is as Invoice[]) || []);
       setProfile({
         name: prof?.nome_fantasia || prof?.full_name || null,
-        cpanel_username: (prof as any)?.cpanel_username || null
+        cpanel_username: (prof as any)?.cpanel_username || null,
+        whm_data: (prof as any)?.whm_data || null
       });
       setLoading(false);
     })();
@@ -44,6 +47,33 @@ export default function ClienteHome() {
   const openInvoices = invoices.filter((i) => i.status === "open" || i.status === "overdue");
   const overdueCount = invoices.filter((i) => i.status === "overdue").length;
   const next = openInvoices[0];
+
+  const fetchStats = async () => {
+    if (!profile.cpanel_username) return;
+    setStatsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action: "get_stats", cpanel_user: profile.cpanel_username }
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        const newData = data.result;
+        setProfile(p => ({ ...p, whm_data: newData }));
+        // Update database for caching
+        await supabase.from("profiles").update({ whm_data: newData }).eq("id", clientId!);
+      }
+    } catch (e) {
+      console.error("Stats error", e);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (profile.cpanel_username && !profile.whm_data) {
+      fetchStats();
+    }
+  }, [profile.cpanel_username]);
 
   const handleCPanelLogin = async () => {
     if (!profile.cpanel_username) return;
@@ -105,6 +135,75 @@ export default function ClienteHome() {
           icon={<Receipt className="h-4 w-4" />}
         />
       </div>
+
+      {profile.cpanel_username && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <HardDrive className="h-4 w-4 text-primary" /> Uso de Disco
+              </CardTitle>
+              {statsLoading && <Zap className="h-3 w-3 animate-pulse text-muted-foreground" />}
+            </CardHeader>
+            <CardContent>
+              {profile.whm_data?.summary?.data?.acct?.[0] ? (() => {
+                const acct = profile.whm_data.summary.data.acct[0];
+                const used = parseFloat(acct.diskused.replace("M", ""));
+                const limit = parseFloat(acct.disklimit.replace("M", ""));
+                const pct = Math.min(100, Math.round((used / limit) * 100));
+                return (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-xs">
+                      <span>{acct.diskused} de {acct.disklimit === "unlimited" ? "∞" : acct.disklimit}</span>
+                      <span className="font-semibold">{pct}%</span>
+                    </div>
+                    <Progress value={pct} className="h-2" />
+                  </div>
+                );
+              })() : <p className="text-xs text-muted-foreground">Carregando dados…</p>}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" /> Banda Mensal
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {profile.whm_data?.bandwidth?.data?.bandwidth?.[0] ? (() => {
+                const bw = profile.whm_data.bandwidth.data.bandwidth[0];
+                const used = bw.totalbytes / (1024 * 1024); // to MB
+                const limit = bw.limit / (1024 * 1024); // to MB
+                const pct = Math.min(100, Math.round((used / limit) * 100));
+                return (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-xs">
+                      <span>{used.toFixed(0)}MB de {bw.limit === 0 ? "∞" : `${limit.toFixed(0)}MB`}</span>
+                      <span className="font-semibold">{pct}%</span>
+                    </div>
+                    <Progress value={pct} className="h-2" />
+                  </div>
+                );
+              })() : <p className="text-xs text-muted-foreground">Carregando dados…</p>}
+            </CardContent>
+          </Card>
+
+          <Card className="hidden lg:block">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Status SSL
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
+                <CheckCircle2 className="h-4 w-4" /> Certificado Ativo
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">Protegendo seu domínio principal e subdomínios.</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-4">
         <Card>

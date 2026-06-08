@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 import {
   TrendingUp, Users, FileText, Receipt, AlertCircle, CheckCircle2,
-  ArrowUpRight, Activity, Loader2,
+  ArrowUpRight, Activity, Loader2, Server, ServerCrash, Cpu, RefreshCw
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 type Metrics = {
   mrrCents: number;
@@ -30,6 +32,23 @@ const startOfMonthIso = () => {
 export function DashboardPanel() {
   const [m, setM] = useState<Metrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [serverStatus, setServerStatus] = useState<any>(null);
+  const [serverLoading, setServerStatusLoading] = useState(false);
+
+  const fetchServerStatus = async () => {
+    setServerStatusLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action: "get_server_status", cpanel_user: "admin" } // user doesn't matter for this action
+      });
+      if (error) throw error;
+      if (data?.ok) setServerStatus(data.result);
+    } catch (e) {
+      console.error("Server status error", e);
+    } finally {
+      setServerStatusLoading(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -94,6 +113,7 @@ export function DashboardPanel() {
       });
       setLoading(false);
     })();
+    fetchServerStatus();
   }, []);
 
   if (loading || !m) {
@@ -161,8 +181,68 @@ export function DashboardPanel() {
         />
       </div>
 
-      {/* Atividade recente */}
-      <div className="bg-card rounded-2xl border border-border/60 p-6">
+      {/* Saúde do Servidor */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-card rounded-2xl border border-border/60 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Server className="h-4 w-4 text-primary" />
+              <h2 className="font-display text-lg">Saúde do Servidor WHM</h2>
+            </div>
+            <Button variant="ghost" size="sm" onClick={fetchServerStatus} disabled={serverLoading}>
+              <RefreshCw className={`h-3 w-3 mr-2 ${serverLoading ? "animate-spin" : ""}`} /> Atualizar
+            </Button>
+          </div>
+          
+          {!serverStatus ? (
+            <div className="py-10 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
+              <ServerCrash className="h-8 w-8 opacity-20" />
+              {serverLoading ? "Consultando API WHM…" : "Integração WHM não configurada ou inacessível."}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Cpu className="h-4 w-4 text-primary" /> Carga do Sistema
+                  </div>
+                  <span className="text-xs font-semibold">{serverStatus.load?.data?.one}</span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
+                    <span>Média 1min</span>
+                    <span>{serverStatus.load?.data?.one}</span>
+                  </div>
+                  <Progress value={Math.min(100, (parseFloat(serverStatus.load?.data?.one) / 8) * 100)} className="h-1.5" />
+                  <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider">
+                    <span>Média 5min</span>
+                    <span>{serverStatus.load?.data?.five}</span>
+                  </div>
+                  <Progress value={Math.min(100, (parseFloat(serverStatus.load?.data?.five) / 8) * 100)} className="h-1.5" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="text-sm font-medium flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" /> Informações
+                </div>
+                <dl className="grid grid-cols-2 gap-y-2 text-xs">
+                  <dt className="text-muted-foreground">Hostname</dt>
+                  <dd className="font-medium text-right truncate">{serverStatus.info?.data?.hostname}</dd>
+                  <dt className="text-muted-foreground">Versão WHM</dt>
+                  <dd className="font-medium text-right">{serverStatus.info?.data?.version}</dd>
+                  <dt className="text-muted-foreground">OS</dt>
+                  <dd className="font-medium text-right">{serverStatus.info?.data?.os_name} {serverStatus.info?.data?.os_version}</dd>
+                  <dt className="text-muted-foreground">Kernel</dt>
+                  <dd className="font-medium text-right truncate">{serverStatus.info?.data?.kernel_version}</dd>
+                </dl>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Atividade recente (mover para o lado se houver espaço) */}
+        <div className="bg-card rounded-2xl border border-border/60 p-6 flex flex-col">
         <div className="flex items-center gap-2 mb-4">
           <Activity className="h-4 w-4 text-primary" />
           <h2 className="font-display text-lg">Atividade recente</h2>
@@ -190,7 +270,8 @@ export function DashboardPanel() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 const accentClasses: Record<string, string> = {

@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { fmtMoney, cycleLabel, productTypeLabel, nextBillingDate, fmtDate } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
-import { Sparkles, Plus, Loader2, Trash2 } from "lucide-react";
+import { Sparkles, Plus, Loader2, Trash2, Mail } from "lucide-react";
+import { EmailManager } from "@/components/cliente/EmailManager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Product = { id: string; name: string; description: string | null; type: string; billing_cycle: string; price_cents: number };
 type Contract = { id: string; status: string };
@@ -66,6 +68,7 @@ export default function Servicos() {
   const [adding, setAdding] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<ContractItem | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [profile, setProfile] = useState<{ cpanel_username: string | null }>({ cpanel_username: null });
 
   const loadItems = useCallback(async (contractId: string) => {
     const { data } = await supabase
@@ -79,12 +82,14 @@ export default function Servicos() {
   useEffect(() => {
     if (!clientId) return;
     (async () => {
-      const [{ data: p }, { data: c }] = await Promise.all([
+      const [{ data: p }, { data: c }, { data: prof }] = await Promise.all([
         supabase.from("products").select("*").eq("active", true).in("type", ["service", "addon"]).order("sort_order"),
         supabase.from("contracts").select("id, status").eq("client_id", clientId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("profiles").select("cpanel_username").eq("id", clientId).maybeSingle(),
       ]);
       setProducts((p as Product[]) || []);
       setContract(c as Contract);
+      setProfile({ cpanel_username: (prof as any)?.cpanel_username || null });
       if (c) await loadItems((c as Contract).id);
       setLoading(false);
     })();
@@ -163,14 +168,21 @@ export default function Servicos() {
   return (
     <div className="space-y-8">
       <div>
-        <div className="text-xs uppercase tracking-widest text-muted-foreground">Catálogo</div>
-        <h1 className="font-display text-4xl">Serviços a la carte</h1>
-        <p className="text-muted-foreground mt-1">Contrate serviços avulsos e add-ons. Tudo é incluído na sua próxima fatura.</p>
+        <div className="text-xs uppercase tracking-widest text-muted-foreground">Serviços</div>
+        <h1 className="font-display text-4xl">Gestão de Recursos</h1>
+        <p className="text-muted-foreground mt-1">Gerencie seus serviços, add-ons e contas de e-mail em um só lugar.</p>
       </div>
 
-      {!loading && contract && (
-        <section className="space-y-3">
-          <h2 className="font-display text-2xl">Seus serviços ativos</h2>
+      <Tabs defaultValue="services" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="services">Serviços e Planos</TabsTrigger>
+          {profile.cpanel_username && <TabsTrigger value="emails">Contas de E-mail</TabsTrigger>}
+        </TabsList>
+
+        <TabsContent value="services" className="space-y-8 mt-0">
+          {!loading && contract && (
+            <section className="space-y-3">
+              <h2 className="font-display text-2xl">Seus serviços ativos</h2>
           {activeItems.length === 0 ? (
             <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Nenhum serviço avulso contratado.</CardContent></Card>
           ) : (
@@ -206,6 +218,15 @@ export default function Servicos() {
           )}
         </section>
       )}
+
+        </TabsContent>
+
+        {profile.cpanel_username && (
+          <TabsContent value="emails" className="mt-0">
+            <EmailManager cpanelUser={profile.cpanel_username} />
+          </TabsContent>
+        )}
+      </Tabs>
 
       <section className="space-y-3">
         <h2 className="font-display text-2xl">Disponíveis</h2>

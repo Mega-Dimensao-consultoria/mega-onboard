@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/hooks/useBrand";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +17,8 @@ type Form = {
   whm_user: string;
   whm_api_token: string;
   whm_port: string;
+  whm_auto_provision: boolean;
+  whm_auto_suspend: boolean;
 };
 
 export function BillingSettingsPanel() {
@@ -28,6 +31,8 @@ export function BillingSettingsPanel() {
     whm_user: "",
     whm_api_token: "",
     whm_port: "2087",
+    whm_auto_provision: false,
+    whm_auto_suspend: false,
   });
   const [saving, setSaving] = useState(false);
 
@@ -42,6 +47,8 @@ export function BillingSettingsPanel() {
       whm_user: whm.user || "",
       whm_api_token: whm.api_token || "",
       whm_port: whm.port || "2087",
+      whm_auto_provision: (brand as any).whm_auto_provision || false,
+      whm_auto_suspend: (brand as any).whm_auto_suspend || false,
     });
   }, [brand]);
 
@@ -64,6 +71,8 @@ export function BillingSettingsPanel() {
             api_token: f.whm_api_token,
             port: f.whm_port,
           } as any,
+          whm_auto_provision: f.whm_auto_provision,
+          whm_auto_suspend: f.whm_auto_suspend,
         })
         .eq("id", brand.id);
       if (error) throw error;
@@ -216,6 +225,30 @@ export function BillingSettingsPanel() {
               value={f.whm_api_token}
               onChange={(e) => setF({ ...f, whm_api_token: e.target.value })}
               placeholder="Seu token de API do WHM"
+            />
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-6 pt-4 border-t border-border/40">
+          <div className="flex items-center justify-between gap-3 bg-secondary/30 p-4 rounded-xl">
+            <div>
+              <Label className="font-medium">Provisão Automática</Label>
+              <p className="text-[10px] text-muted-foreground">Criar conta cPanel após pagamento da primeira fatura.</p>
+            </div>
+            <Switch 
+              checked={f.whm_auto_provision} 
+              onCheckedChange={(v) => setF({ ...f, whm_auto_provision: v })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3 bg-secondary/30 p-4 rounded-xl">
+            <div>
+              <Label className="font-medium">Suspensão Automática</Label>
+              <p className="text-[10px] text-muted-foreground">Suspender conta no cPanel se houver faturas vencidas.</p>
+            </div>
+            <Switch 
+              checked={f.whm_auto_suspend} 
+              onCheckedChange={(v) => setF({ ...f, whm_auto_suspend: v })}
             />
           </div>
         </div>

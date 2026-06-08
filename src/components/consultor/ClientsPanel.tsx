@@ -39,6 +39,7 @@ export function ClientsPanel() {
   const [deleting, setDeleting] = useState(false);
   const [whmBusy, setWhmBusy] = useState(false);
   const [cpanelUserEdit, setCpanelUserEdit] = useState("");
+  const [cpanelDomainEdit, setCpanelDomainEdit] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -54,6 +55,7 @@ export function ClientsPanel() {
   const openDetail = async (c: Client) => {
     setSelected(c);
     setCpanelUserEdit((c as any).cpanel_username || "");
+    setCpanelDomainEdit((c as any).cpanel_domain || "");
     setDetailLoading(true);
     setContracts([]); setInvoices([]);
     const [{ data: cs }, { data: is }] = await Promise.all([
@@ -69,11 +71,14 @@ export function ClientsPanel() {
     if (!selected) return;
     setWhmBusy(true);
     try {
-      const { error } = await supabase.from("profiles").update({ cpanel_username: cpanelUserEdit || null }).eq("id", selected.id);
+      const { error } = await supabase.from("profiles").update({ 
+        cpanel_username: cpanelUserEdit || null,
+        cpanel_domain: cpanelDomainEdit || null
+      }).eq("id", selected.id);
       if (error) throw error;
-      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, cpanel_username: cpanelUserEdit } : c));
-      setSelected({ ...selected, cpanel_username: cpanelUserEdit } as any);
-      toast({ title: "Usuário cPanel atualizado" });
+      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, cpanel_username: cpanelUserEdit, cpanel_domain: cpanelDomainEdit } : c));
+      setSelected({ ...selected, cpanel_username: cpanelUserEdit, cpanel_domain: cpanelDomainEdit } as any);
+      toast({ title: "Dados cPanel atualizados" });
     } catch (e) {
       toast({ title: "Erro ao atualizar", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally {
@@ -292,20 +297,27 @@ export function ClientsPanel() {
                     <Shield className="h-4 w-4" /> Gestão cPanel / WHM
                   </h3>
                   <div className="space-y-4 bg-secondary/20 rounded-xl p-4">
-                    <div className="flex gap-2">
-                      <div className="flex-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
                         <Label className="text-[10px] uppercase">Usuário cPanel</Label>
                         <Input 
-                          size={1} 
                           value={cpanelUserEdit} 
                           onChange={(e) => setCpanelUserEdit(e.target.value)} 
                           placeholder="Ex: darthvader"
                         />
                       </div>
-                      <Button className="mt-6" size="sm" onClick={updateCpanelUser} disabled={whmBusy}>
-                        Salvar
-                      </Button>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] uppercase">Domínio Principal</Label>
+                        <Input 
+                          value={cpanelDomainEdit} 
+                          onChange={(e) => setCpanelDomainEdit(e.target.value)} 
+                          placeholder="Ex: darth.com"
+                        />
+                      </div>
                     </div>
+                    <Button className="w-full" size="sm" onClick={updateCpanelUser} disabled={whmBusy}>
+                      Salvar Dados de Acesso
+                    </Button>
 
                     {(selected as any)?.cpanel_username && (
                       <div className="grid grid-cols-2 gap-2">
@@ -362,6 +374,30 @@ export function ClientsPanel() {
                           disabled={whmBusy}
                         >
                           Alterar senha
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={async () => {
+                            if (!confirm("Deseja forçar o provisionamento (criação de conta) no WHM para este cliente agora?")) return;
+                            setWhmBusy(true);
+                            try {
+                              const { data: inv } = await supabase.from("invoices").select("id").eq("client_id", selected.id).eq("status", "paid").limit(1).maybeSingle();
+                              if (!inv) throw new Error("Cliente precisa de pelo menos uma fatura paga para provisionar automaticamente.");
+                              const { data, error } = await supabase.functions.invoke("process-invoice-paid", {
+                                body: { invoice_id: inv.id }
+                              });
+                              if (error) throw error;
+                              toast({ title: "Comando enviado", description: "Processo de provisionamento iniciado." });
+                            } catch (e) {
+                              toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
+                            } finally {
+                              setWhmBusy(false);
+                            }
+                          }}
+                          disabled={whmBusy}
+                        >
+                          Forçar Provisionamento
                         </Button>
                       </div>
                     )}
