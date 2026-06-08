@@ -131,6 +131,11 @@ Deno.serve(async (req) => {
       await adminClient.from("payment_intents")
         .update({ status: "paid", raw_payload: cap })
         .eq("provider_ref", orderId);
+
+      // Trigger post-payment processing
+      await adminClient.functions.invoke("process-invoice-paid", {
+        body: { invoice_id: inv.id }
+      }).catch(e => console.error("Post-payment process failed", e));
     } else {
       await adminClient.from("payment_intents")
         .update({ status: status.toLowerCase(), raw_payload: cap })
