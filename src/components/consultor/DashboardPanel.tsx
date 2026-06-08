@@ -112,6 +112,7 @@ export function DashboardPanel() {
       });
       setLoading(false);
     })();
+    fetchServerStatus();
   }, []);
 
   if (loading || !m) {
