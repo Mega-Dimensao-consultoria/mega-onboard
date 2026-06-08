@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { fmtMoney, cycleLabel, productTypeLabel, nextBillingDate, fmtDate } from "@/lib/format";
 import { toast } from "@/hooks/use-toast";
-import { Sparkles, Plus, Loader2, Trash2 } from "lucide-react";
+import { Sparkles, Plus, Loader2, Trash2, Mail } from "lucide-react";
+import { EmailManager } from "@/components/cliente/EmailManager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Product = { id: string; name: string; description: string | null; type: string; billing_cycle: string; price_cents: number };
 type Contract = { id: string; status: string };
