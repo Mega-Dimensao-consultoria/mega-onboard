@@ -286,6 +286,88 @@ export function ClientsPanel() {
                     )}
                 </section>
 
+                {/* WHM / cPanel */}
+                <section className="space-y-3 pt-4 border-t border-border">
+                  <h3 className="font-display text-lg flex items-center gap-2">
+                    <Shield className="h-4 w-4" /> Gestão cPanel / WHM
+                  </h3>
+                  <div className="space-y-4 bg-secondary/20 rounded-xl p-4">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Label className="text-[10px] uppercase">Usuário cPanel</Label>
+                        <Input 
+                          size={1} 
+                          value={cpanelUserEdit} 
+                          onChange={(e) => setCpanelUserEdit(e.target.value)} 
+                          placeholder="Ex: darthvader"
+                        />
+                      </div>
+                      <Button className="mt-6" size="sm" onClick={updateCpanelUser} disabled={whmBusy}>
+                        Salvar
+                      </Button>
+                    </div>
+
+                    {(selected as any)?.cpanel_username && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                          onClick={() => whmAction("suspend")}
+                          disabled={whmBusy}
+                        >
+                          <Lock className="h-3.5 w-3.5 mr-1" /> Suspender
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-green-600 border-green-200 hover:bg-green-50"
+                          onClick={() => whmAction("unsuspend")}
+                          disabled={whmBusy}
+                        >
+                          <Unlock className="h-3.5 w-3.5 mr-1" /> Reativar
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => {
+                            if (confirm("Tem certeza que deseja ENCERRAR (Terminate) esta conta no cPanel? Esta ação é irreversível.")) {
+                              whmAction("terminate");
+                            }
+                          }}
+                          disabled={whmBusy}
+                        >
+                          <LogOut className="h-3.5 w-3.5 mr-1" /> Encerrar conta
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={async () => {
+                            const newPw = prompt("Digite a nova senha para a conta cPanel:");
+                            if (newPw) {
+                              setWhmBusy(true);
+                              try {
+                                const { data, error } = await supabase.functions.invoke("whm-integration", {
+                                  body: { action: "change_password", cpanel_user: (selected as any).cpanel_username, password: newPw }
+                                });
+                                if (error) throw error;
+                                toast({ title: "Senha alterada", description: "Senha do cPanel atualizada com sucesso." });
+                              } catch (e) {
+                                toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
+                              } finally {
+                                setWhmBusy(false);
+                              }
+                            }
+                          }}
+                          disabled={whmBusy}
+                        >
+                          Alterar senha
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
                 {/* Zona de perigo */}
                 <section className="space-y-3 pt-4 border-t border-destructive/20">
                   <h3 className="font-display text-lg text-destructive flex items-center gap-2">
