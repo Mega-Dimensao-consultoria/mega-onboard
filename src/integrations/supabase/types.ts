@@ -110,6 +110,8 @@ export type Database = {
           success_title: string | null
           telefone: string | null
           updated_at: string
+          whm_auto_provision: boolean | null
+          whm_auto_suspend: boolean | null
           whm_config: Json | null
         }
         Insert: {
@@ -162,6 +164,8 @@ export type Database = {
           success_title?: string | null
           telefone?: string | null
           updated_at?: string
+          whm_auto_provision?: boolean | null
+          whm_auto_suspend?: boolean | null
           whm_config?: Json | null
         }
         Update: {
@@ -214,6 +218,8 @@ export type Database = {
           success_title?: string | null
           telefone?: string | null
           updated_at?: string
+          whm_auto_provision?: boolean | null
+          whm_auto_suspend?: boolean | null
           whm_config?: Json | null
         }
         Relationships: []
@@ -867,6 +873,7 @@ export type Database = {
           sort_order: number
           type: string
           updated_at: string
+          whm_package: string | null
         }
         Insert: {
           active?: boolean
@@ -879,6 +886,7 @@ export type Database = {
           sort_order?: number
           type: string
           updated_at?: string
+          whm_package?: string | null
         }
         Update: {
           active?: boolean
@@ -891,6 +899,7 @@ export type Database = {
           sort_order?: number
           type?: string
           updated_at?: string
+          whm_package?: string | null
         }
         Relationships: []
       }
@@ -900,6 +909,7 @@ export type Database = {
           cep: string | null
           cidade: string | null
           complemento: string | null
+          cpanel_domain: string | null
           cpanel_username: string | null
           created_at: string
           doc_number: string | null
@@ -915,12 +925,14 @@ export type Database = {
           razao_social: string | null
           telefone: string | null
           updated_at: string
+          whm_data: Json | null
         }
         Insert: {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
           complemento?: string | null
+          cpanel_domain?: string | null
           cpanel_username?: string | null
           created_at?: string
           doc_number?: string | null
@@ -936,12 +948,14 @@ export type Database = {
           razao_social?: string | null
           telefone?: string | null
           updated_at?: string
+          whm_data?: Json | null
         }
         Update: {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
           complemento?: string | null
+          cpanel_domain?: string | null
           cpanel_username?: string | null
           created_at?: string
           doc_number?: string | null
@@ -957,6 +971,7 @@ export type Database = {
           razao_social?: string | null
           telefone?: string | null
           updated_at?: string
+          whm_data?: Json | null
         }
         Relationships: []
       }
