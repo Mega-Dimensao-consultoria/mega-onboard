@@ -31,6 +31,23 @@ const startOfMonthIso = () => {
 export function DashboardPanel() {
   const [m, setM] = useState<Metrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [serverStatus, setServerStatus] = useState<any>(null);
+  const [serverLoading, setServerStatusLoading] = useState(false);
+
+  const fetchServerStatus = async () => {
+    setServerStatusLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action: "get_server_status", cpanel_user: "admin" } // user doesn't matter for this action
+      });
+      if (error) throw error;
+      if (data?.ok) setServerStatus(data.result);
+    } catch (e) {
+      console.error("Server status error", e);
+    } finally {
+      setServerStatusLoading(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
