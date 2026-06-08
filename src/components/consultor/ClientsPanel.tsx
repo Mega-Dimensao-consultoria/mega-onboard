@@ -374,6 +374,29 @@ export function ClientsPanel() {
                           disabled={whmBusy}
                         >
                           Alterar senha
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={async () => {
+                            if (!confirm("Deseja forçar o provisionamento (criação de conta) no WHM para este cliente agora?")) return;
+                            setWhmBusy(true);
+                            try {
+                              const { data: inv } = await supabase.from("invoices").select("id").eq("client_id", selected.id).eq("status", "paid").limit(1).maybeSingle();
+                              if (!inv) throw new Error("Cliente precisa de pelo menos uma fatura paga para provisionar automaticamente.");
+                              const { data, error } = await supabase.functions.invoke("process-invoice-paid", {
+                                body: { invoice_id: inv.id }
+                              });
+                              if (error) throw error;
+                              toast({ title: "Comando enviado", description: "Processo de provisionamento iniciado." });
+                            } catch (e) {
+                              toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
+                            } finally {
+                              setWhmBusy(false);
+                            }
+                          }}
+                          disabled={whmBusy}
+                        >
+                          Forçar Provisionamento
                         </Button>
                       </div>
                     )}
