@@ -374,6 +374,7 @@ export function ClientsPanel() {
                           disabled={whmBusy}
                         >
                           Alterar senha
+                        </Button>
                         <Button 
                           variant="secondary" 
                           size="sm" 
