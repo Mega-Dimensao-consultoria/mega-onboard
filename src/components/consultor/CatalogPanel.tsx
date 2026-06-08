@@ -86,6 +86,7 @@ export function CatalogPanel() {
       price_cents: parsed.data.price_cents,
       active: form.active,
       sort_order: form.sort_order,
+      whm_package: form.whm_package || null,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
