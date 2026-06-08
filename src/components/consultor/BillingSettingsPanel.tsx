@@ -276,14 +276,51 @@ export function BillingSettingsPanel() {
           </div>
           <div className="space-y-2">
             <Label>Token de API</Label>
-            <Input
-              type="password"
-              value={f.whm_api_token}
-              onChange={(e) => setF({ ...f, whm_api_token: e.target.value })}
-              placeholder="Seu token de API do WHM"
-            />
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                className="flex-1"
+                value={f.whm_api_token}
+                onChange={(e) => setF({ ...f, whm_api_token: e.target.value })}
+                placeholder="Seu token de API do WHM"
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                type="button"
+                onClick={testWHM}
+                disabled={testingWhm || !f.whm_host || !f.whm_api_token}
+              >
+                {testingWhm ? <Loader2 className="h-4 w-4 animate-spin" /> : "Testar"}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {testResult && (
+          <div className={`p-3 rounded-xl border flex gap-3 items-start ${testResult.success ? 'bg-green-500/5 border-green-500/20' : 'bg-destructive/5 border-destructive/20'}`}>
+            {testResult.success ? (
+              <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            )}
+            <div className="text-xs space-y-1">
+              <p className={`font-semibold ${testResult.success ? 'text-green-600' : 'text-destructive'}`}>
+                {testResult.success ? 'Conexão Estabelecida!' : 'Falha na Conexão'}
+              </p>
+              <p className="text-muted-foreground">{testResult.message}</p>
+              {testResult.details && (
+                <ul className="list-disc pl-4 mt-2 space-y-1 text-[10px] text-muted-foreground">
+                  {Object.entries(testResult.details).map(([k, v]) => (
+                    <li key={k} className="capitalize">
+                      {k.replace('_', ' ')}: {v ? '✅ OK' : '❌ Erro'}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-6 pt-4 border-t border-border/40">
           <div className="flex items-center justify-between gap-3 bg-secondary/30 p-4 rounded-xl">
