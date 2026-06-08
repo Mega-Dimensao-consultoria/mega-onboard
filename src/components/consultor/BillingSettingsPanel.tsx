@@ -31,6 +31,8 @@ export function BillingSettingsPanel() {
     whm_user: "",
     whm_api_token: "",
     whm_port: "2087",
+    whm_auto_provision: false,
+    whm_auto_suspend: false,
   });
   const [saving, setSaving] = useState(false);
 
