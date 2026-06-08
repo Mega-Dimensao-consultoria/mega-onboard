@@ -30,13 +30,14 @@ export default function ClienteHome() {
       const [{ data: cs }, { data: is }, { data: prof }] = await Promise.all([
         supabase.from("contracts").select("id, status, created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("invoices").select("id, total_cents, status, due_date").eq("client_id", clientId).order("due_date", { ascending: true }),
-        supabase.from("profiles").select("full_name, nome_fantasia, cpanel_username").eq("id", clientId).maybeSingle(),
+        supabase.from("profiles").select("full_name, nome_fantasia, cpanel_username, whm_data").eq("id", clientId).maybeSingle(),
       ]);
       setContracts((cs as Contract[]) || []);
       setInvoices((is as Invoice[]) || []);
       setProfile({
         name: prof?.nome_fantasia || prof?.full_name || null,
-        cpanel_username: (prof as any)?.cpanel_username || null
+        cpanel_username: (prof as any)?.cpanel_username || null,
+        whm_data: (prof as any)?.whm_data || null
       });
       setLoading(false);
     })();
