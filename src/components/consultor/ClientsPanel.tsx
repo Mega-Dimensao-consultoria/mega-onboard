@@ -39,6 +39,7 @@ export function ClientsPanel() {
   const [deleting, setDeleting] = useState(false);
   const [whmBusy, setWhmBusy] = useState(false);
   const [cpanelUserEdit, setCpanelUserEdit] = useState("");
+  const [cpanelDomainEdit, setCpanelDomainEdit] = useState("");
 
   useEffect(() => {
     (async () => {
