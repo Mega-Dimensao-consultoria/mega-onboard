@@ -148,6 +148,22 @@ Deno.serve(async (req) => {
         });
         break;
       }
+      case "test_connection": {
+        if (!isAuthorized) return json({ error: "Unauthorized" }, 403);
+        // Test basic connectivity and permissions
+        const version = await whmCall("version", {});
+        const apiTokens = await whmCall("list_api_tokens", {});
+        const serverLoad = await whmCall("get_server_load", {});
+        
+        result = {
+          connectivity: version?.metadata?.result === 1,
+          version: version?.data?.version,
+          permissions_check: apiTokens?.metadata?.result === 1,
+          load_check: serverLoad?.metadata?.result === 1,
+          raw: { version, apiTokens, serverLoad }
+        };
+        break;
+      }
       case "get_server_status": {
         if (!isAuthorized) return json({ error: "Unauthorized" }, 403);
         const load = await whmCall("get_server_load", {});

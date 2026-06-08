@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 type Form = {
   pix_key_type: string;
@@ -35,6 +35,62 @@ export function BillingSettingsPanel() {
     whm_auto_suspend: false,
   });
   const [saving, setSaving] = useState(false);
+  const [testingWhm, setTestingWhm] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; details?: any } | null>(null);
+
+  const testWHM = async () => {
+    setTestingWhm(true);
+    setTestResult(null);
+    try {
+      // First save the current config to ensure we test what's in the inputs
+      const { error: saveErr } = await supabase
+        .from("brand_settings")
+        .update({
+          whm_config: {
+            host: f.whm_host,
+            user: f.whm_user,
+            api_token: f.whm_api_token,
+            port: f.whm_port,
+          } as any,
+        })
+        .eq("id", brand?.id);
+      
+      if (saveErr) throw new Error("Salve as configurações antes de testar.");
+
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action: "test_connection", cpanel_user: f.whm_user }
+      });
+
+      if (error) throw error;
+
+      if (data?.ok && data.result?.connectivity) {
+        setTestResult({
+          success: true,
+          message: `Conectado ao WHM v${data.result.version}. Permissões verificadas com sucesso.`,
+          details: {
+            conectividade: data.result.connectivity,
+            permissoes: data.result.permissions_check,
+            carga_sistema: data.result.load_check
+          }
+        });
+        toast({ title: "Teste de conexão bem-sucedido!" });
+      } else {
+        throw new Error(data?.result?.raw?.version?.metadata?.reason || "Falha na autenticação ou servidor inacessível.");
+      }
+    } catch (e) {
+      setTestResult({
+        success: false,
+        message: e instanceof Error ? e.message : "Erro desconhecido ao testar conexão."
+      });
+      toast({ 
+        title: "Erro no teste", 
+        description: "Verifique os dados e tente novamente.",
+        variant: "destructive" 
+      });
+    } finally {
+      setTestingWhm(false);
+    }
+  };
 
   useEffect(() => {
     if (!brand) return;
@@ -220,14 +276,51 @@ export function BillingSettingsPanel() {
           </div>
           <div className="space-y-2">
             <Label>Token de API</Label>
-            <Input
-              type="password"
-              value={f.whm_api_token}
-              onChange={(e) => setF({ ...f, whm_api_token: e.target.value })}
-              placeholder="Seu token de API do WHM"
-            />
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                className="flex-1"
+                value={f.whm_api_token}
+                onChange={(e) => setF({ ...f, whm_api_token: e.target.value })}
+                placeholder="Seu token de API do WHM"
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                type="button"
+                onClick={testWHM}
+                disabled={testingWhm || !f.whm_host || !f.whm_api_token}
+              >
+                {testingWhm ? <Loader2 className="h-4 w-4 animate-spin" /> : "Testar"}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {testResult && (
+          <div className={`p-3 rounded-xl border flex gap-3 items-start ${testResult.success ? 'bg-green-500/5 border-green-500/20' : 'bg-destructive/5 border-destructive/20'}`}>
+            {testResult.success ? (
+              <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            )}
+            <div className="text-xs space-y-1">
+              <p className={`font-semibold ${testResult.success ? 'text-green-600' : 'text-destructive'}`}>
+                {testResult.success ? 'Conexão Estabelecida!' : 'Falha na Conexão'}
+              </p>
+              <p className="text-muted-foreground">{testResult.message}</p>
+              {testResult.details && (
+                <ul className="list-disc pl-4 mt-2 space-y-1 text-[10px] text-muted-foreground">
+                  {Object.entries(testResult.details).map(([k, v]) => (
+                    <li key={k} className="capitalize">
+                      {k.replace('_', ' ')}: {v ? '✅ OK' : '❌ Erro'}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-6 pt-4 border-t border-border/40">
           <div className="flex items-center justify-between gap-3 bg-secondary/30 p-4 rounded-xl">
