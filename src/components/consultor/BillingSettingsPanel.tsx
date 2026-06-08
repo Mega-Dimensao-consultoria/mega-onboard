@@ -171,8 +171,66 @@ export function BillingSettingsPanel() {
 
       <div className="lg:col-span-2">
         <Button onClick={save} disabled={saving} className="w-full">
-          {saving ? "Salvando..." : "Salvar configurações de cobrança"}
+          {saving ? "Salvando..." : "Salvar configurações"}
         </Button>
+      </div>
+
+      {/* WHM / cPanel */}
+      <div className="lg:col-span-2 bg-card rounded-2xl border border-border/60 p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-xl">Integração WHM / cPanel</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Configure seu servidor WHM para automatizar a suspensão e encerramento de contas.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Servidor (IP ou Hostname)</Label>
+            <Input
+              value={f.whm_host}
+              onChange={(e) => setF({ ...f, whm_host: e.target.value })}
+              placeholder="ex: srv1.meuhost.com"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Porta API (Padrão: 2087)</Label>
+            <Input
+              value={f.whm_port}
+              onChange={(e) => setF({ ...f, whm_port: e.target.value })}
+              placeholder="2087"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Usuário WHM (Root ou Reseller)</Label>
+            <Input
+              value={f.whm_user}
+              onChange={(e) => setF({ ...f, whm_user: e.target.value })}
+              placeholder="root"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Token de API</Label>
+            <Input
+              type="password"
+              value={f.whm_api_token}
+              onChange={(e) => setF({ ...f, whm_api_token: e.target.value })}
+              placeholder="Seu token de API do WHM"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-blue-500/40 bg-blue-500/5 p-3 flex gap-3">
+          <ShieldCheck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+          <div className="text-xs space-y-1 text-muted-foreground">
+            <p className="font-medium text-foreground">Como configurar:</p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Acesse seu WHM e procure por <strong>Manage API Tokens</strong>.</li>
+              <li>Gere um novo token com permissões para: <em>Manage accounts (suspend/unsuspend/remove)</em> e <em>Passwd</em>.</li>
+              <li>Insira o token e o hostname acima e salve.</li>
+            </ol>
+          </div>
+        </div>
       </div>
     </div>
   );
