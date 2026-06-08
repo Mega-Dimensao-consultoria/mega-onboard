@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 import {
   TrendingUp, Users, FileText, Receipt, AlertCircle, CheckCircle2,
-  ArrowUpRight, Activity, Loader2, Server, ServerCrash, Cpu,
+  ArrowUpRight, Activity, Loader2, Server, ServerCrash, Cpu, RefreshCw
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
