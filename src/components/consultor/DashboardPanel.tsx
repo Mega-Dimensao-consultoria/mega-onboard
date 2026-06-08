@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
 import {
   TrendingUp, Users, FileText, Receipt, AlertCircle, CheckCircle2,
-  ArrowUpRight, Activity, Loader2,
+  ArrowUpRight, Activity, Loader2, Server, ServerCrash, Cpu,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 type Metrics = {
   mrrCents: number;
