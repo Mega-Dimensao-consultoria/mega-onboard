@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtMoney, fmtDate, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
-import { ArrowRight, FileText, Receipt, AlertCircle } from "lucide-react";
+import { ArrowRight, FileText, Receipt, AlertCircle, ExternalLink } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 type Contract = { id: string; status: string; created_at: string };
 type Invoice = { id: string; total_cents: number; status: string; due_date: string };
