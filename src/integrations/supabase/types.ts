@@ -110,6 +110,7 @@ export type Database = {
           success_title: string | null
           telefone: string | null
           updated_at: string
+          whm_config: Json | null
         }
         Insert: {
           accent_color?: string | null
@@ -161,6 +162,7 @@ export type Database = {
           success_title?: string | null
           telefone?: string | null
           updated_at?: string
+          whm_config?: Json | null
         }
         Update: {
           accent_color?: string | null
@@ -212,6 +214,7 @@ export type Database = {
           success_title?: string | null
           telefone?: string | null
           updated_at?: string
+          whm_config?: Json | null
         }
         Relationships: []
       }
@@ -897,6 +900,7 @@ export type Database = {
           cep: string | null
           cidade: string | null
           complemento: string | null
+          cpanel_username: string | null
           created_at: string
           doc_number: string | null
           doc_type: string | null
@@ -917,6 +921,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           complemento?: string | null
+          cpanel_username?: string | null
           created_at?: string
           doc_number?: string | null
           doc_type?: string | null
@@ -937,6 +942,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           complemento?: string | null
+          cpanel_username?: string | null
           created_at?: string
           doc_number?: string | null
           doc_type?: string | null

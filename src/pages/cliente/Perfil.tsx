@@ -39,6 +39,7 @@ type Form = {
   full_name: string; telefone: string; email: string;
   doc_type: "cpf" | "cnpj" | "";
   doc_number: string; nome_fantasia: string; razao_social: string;
+  cpanel_username: string;
   cep: string; logradouro: string; numero: string; complemento: string;
   bairro: string; cidade: string; estado: string;
 };
@@ -46,6 +47,7 @@ type Form = {
 const empty: Form = {
   full_name: "", telefone: "", email: "",
   doc_type: "", doc_number: "", nome_fantasia: "", razao_social: "",
+  cpanel_username: "",
   cep: "", logradouro: "", numero: "", complemento: "",
   bairro: "", cidade: "", estado: "",
 };
@@ -64,7 +66,7 @@ export default function Perfil() {
   useEffect(() => {
     if (!clientId) return;
     supabase.from("profiles")
-      .select("full_name,telefone,email,doc_type,doc_number,nome_fantasia,razao_social,endereco,cep,logradouro,numero,complemento,bairro,cidade,estado")
+      .select("full_name,telefone,email,doc_type,doc_number,nome_fantasia,razao_social,endereco,cep,logradouro,numero,complemento,bairro,cidade,estado,cpanel_username")
       .eq("id", clientId).maybeSingle()
       .then(({ data }) => {
         const docType = (data?.doc_type as "cpf" | "cnpj" | null) || "";
@@ -76,6 +78,7 @@ export default function Perfil() {
           doc_number: docType === "cnpj" ? maskCNPJ(data?.doc_number || "") : docType === "cpf" ? maskCPF(data?.doc_number || "") : data?.doc_number || "",
           nome_fantasia: data?.nome_fantasia || "",
           razao_social: data?.razao_social || "",
+          cpanel_username: (data as any)?.cpanel_username || "",
           cep: maskCEP(data?.cep || ""),
           // fallback: se não houver logradouro estruturado, mostra o endereco antigo
           logradouro: data?.logradouro || data?.endereco || "",
@@ -257,6 +260,17 @@ export default function Perfil() {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Acesso cPanel</CardTitle></CardHeader>
+          <CardContent>
+            <div>
+              <Label>Usuário cPanel</Label>
+              <Input value={form.cpanel_username} disabled />
+              <p className="text-xs text-muted-foreground mt-1">Vinculado pelo consultor para automação de serviços.</p>
+            </div>
           </CardContent>
         </Card>
 

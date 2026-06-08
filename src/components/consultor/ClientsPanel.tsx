@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { fmtDate, fmtMoney, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
-import { Users, Search, Eye, Mail, Phone, MapPin, FileText, Receipt, Building2, User as UserIcon, Hash, Calendar, Trash2 } from "lucide-react";
+import { Users, Search, Eye, Mail, Phone, MapPin, FileText, Receipt, Building2, User as UserIcon, Hash, Calendar, Trash2, Shield, Lock, Unlock, LogOut } from "lucide-react";
 import { startImpersonate } from "@/lib/impersonate";
 import { toast } from "@/hooks/use-toast";
 
@@ -37,6 +37,8 @@ export function ClientsPanel() {
   const [confirmDelete, setConfirmDelete] = useState<Client | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [whmBusy, setWhmBusy] = useState(false);
+  const [cpanelUserEdit, setCpanelUserEdit] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -51,6 +53,7 @@ export function ClientsPanel() {
 
   const openDetail = async (c: Client) => {
     setSelected(c);
+    setCpanelUserEdit((c as any).cpanel_username || "");
     setDetailLoading(true);
     setContracts([]); setInvoices([]);
     const [{ data: cs }, { data: is }] = await Promise.all([
@@ -60,6 +63,38 @@ export function ClientsPanel() {
     setContracts((cs as ContractRow[]) || []);
     setInvoices((is as InvoiceRow[]) || []);
     setDetailLoading(false);
+  };
+
+  const updateCpanelUser = async () => {
+    if (!selected) return;
+    setWhmBusy(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ cpanel_username: cpanelUserEdit || null }).eq("id", selected.id);
+      if (error) throw error;
+      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, cpanel_username: cpanelUserEdit } : c));
+      setSelected({ ...selected, cpanel_username: cpanelUserEdit } as any);
+      toast({ title: "Usuário cPanel atualizado" });
+    } catch (e) {
+      toast({ title: "Erro ao atualizar", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setWhmBusy(false);
+    }
+  };
+
+  const whmAction = async (action: string) => {
+    if (!selected || !(selected as any).cpanel_username) return;
+    setWhmBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action, cpanel_user: (selected as any).cpanel_username }
+      });
+      if (error) throw error;
+      toast({ title: "Comando enviado", description: `Ação ${action} processada pelo WHM.` });
+    } catch (e) {
+      toast({ title: "Erro WHM", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setWhmBusy(false);
+    }
   };
 
   const impersonate = (c: Client) => {
@@ -201,6 +236,7 @@ export function ClientsPanel() {
                     {selected.nome_fantasia && <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Nome fantasia" value={selected.nome_fantasia} />}
                     {selected.razao_social && <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Razão social" value={selected.razao_social} />}
                     <Field icon={<Hash className="h-3.5 w-3.5" />} label={selected.doc_type === "cnpj" ? "CNPJ" : selected.doc_type === "cpf" ? "CPF" : "Documento"} value={selected.doc_number} />
+                    <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Usuário cPanel" value={(selected as any).cpanel_username} />
                     <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={selected.email} />
                     <Field icon={<Phone className="h-3.5 w-3.5" />} label="Telefone" value={selected.telefone} />
                     {selected.endereco && <Field icon={<MapPin className="h-3.5 w-3.5" />} label="Endereço" value={selected.endereco} />}
@@ -248,6 +284,88 @@ export function ClientsPanel() {
                         ))}
                       </ul>
                     )}
+                </section>
+
+                {/* WHM / cPanel */}
+                <section className="space-y-3 pt-4 border-t border-border">
+                  <h3 className="font-display text-lg flex items-center gap-2">
+                    <Shield className="h-4 w-4" /> Gestão cPanel / WHM
+                  </h3>
+                  <div className="space-y-4 bg-secondary/20 rounded-xl p-4">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Label className="text-[10px] uppercase">Usuário cPanel</Label>
+                        <Input 
+                          size={1} 
+                          value={cpanelUserEdit} 
+                          onChange={(e) => setCpanelUserEdit(e.target.value)} 
+                          placeholder="Ex: darthvader"
+                        />
+                      </div>
+                      <Button className="mt-6" size="sm" onClick={updateCpanelUser} disabled={whmBusy}>
+                        Salvar
+                      </Button>
+                    </div>
+
+                    {(selected as any)?.cpanel_username && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                          onClick={() => whmAction("suspend")}
+                          disabled={whmBusy}
+                        >
+                          <Lock className="h-3.5 w-3.5 mr-1" /> Suspender
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-green-600 border-green-200 hover:bg-green-50"
+                          onClick={() => whmAction("unsuspend")}
+                          disabled={whmBusy}
+                        >
+                          <Unlock className="h-3.5 w-3.5 mr-1" /> Reativar
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => {
+                            if (confirm("Tem certeza que deseja ENCERRAR (Terminate) esta conta no cPanel? Esta ação é irreversível.")) {
+                              whmAction("terminate");
+                            }
+                          }}
+                          disabled={whmBusy}
+                        >
+                          <LogOut className="h-3.5 w-3.5 mr-1" /> Encerrar conta
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={async () => {
+                            const newPw = prompt("Digite a nova senha para a conta cPanel:");
+                            if (newPw) {
+                              setWhmBusy(true);
+                              try {
+                                const { data, error } = await supabase.functions.invoke("whm-integration", {
+                                  body: { action: "change_password", cpanel_user: (selected as any).cpanel_username, password: newPw }
+                                });
+                                if (error) throw error;
+                                toast({ title: "Senha alterada", description: "Senha do cPanel atualizada com sucesso." });
+                              } catch (e) {
+                                toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
+                              } finally {
+                                setWhmBusy(false);
+                              }
+                            }
+                          }}
+                          disabled={whmBusy}
+                        >
+                          Alterar senha
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </section>
 
                 {/* Zona de perigo */}

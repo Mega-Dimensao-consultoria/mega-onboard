@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtMoney, fmtDate, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
-import { ArrowRight, FileText, Receipt, AlertCircle } from "lucide-react";
+import { ArrowRight, FileText, Receipt, AlertCircle, ExternalLink } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 type Contract = { id: string; status: string; created_at: string };
 type Invoice = { id: string; total_cents: number; status: string; due_date: string };
@@ -17,8 +18,9 @@ export default function ClienteHome() {
   const { clientId } = useClientId();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [profileName, setProfileName] = useState<string | null>(null);
+  const [profile, setProfile] = useState<{ name: string | null; cpanel_username: string | null }>({ name: null, cpanel_username: null });
   const [loading, setLoading] = useState(true);
+  const [cpanelLoading, setCpanelLoading] = useState(false);
 
   useEffect(() => {
     if (!clientId) return;
@@ -26,11 +28,14 @@ export default function ClienteHome() {
       const [{ data: cs }, { data: is }, { data: prof }] = await Promise.all([
         supabase.from("contracts").select("id, status, created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("invoices").select("id, total_cents, status, due_date").eq("client_id", clientId).order("due_date", { ascending: true }),
-        supabase.from("profiles").select("full_name, nome_fantasia").eq("id", clientId).maybeSingle(),
+        supabase.from("profiles").select("full_name, nome_fantasia, cpanel_username").eq("id", clientId).maybeSingle(),
       ]);
       setContracts((cs as Contract[]) || []);
       setInvoices((is as Invoice[]) || []);
-      setProfileName(prof?.nome_fantasia || prof?.full_name || null);
+      setProfile({
+        name: prof?.nome_fantasia || prof?.full_name || null,
+        cpanel_username: (prof as any)?.cpanel_username || null
+      });
       setLoading(false);
     })();
   }, [clientId]);
@@ -40,12 +45,43 @@ export default function ClienteHome() {
   const overdueCount = invoices.filter((i) => i.status === "overdue").length;
   const next = openInvoices[0];
 
+  const handleCPanelLogin = async () => {
+    if (!profile.cpanel_username) return;
+    setCpanelLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action: "get_login_link", cpanel_user: profile.cpanel_username }
+      });
+      if (error) throw error;
+      if (data?.result?.data?.url) {
+        window.open(data.result.data.url, "_blank");
+      } else {
+        throw new Error("Não foi possível gerar o link de acesso.");
+      }
+    } catch (e) {
+      toast({
+        title: "Erro ao acessar cPanel",
+        description: e instanceof Error ? e.message : "Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+    } finally {
+      setCpanelLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <div className="text-xs uppercase tracking-widest text-muted-foreground">Bem-vindo</div>
-        <h1 className="font-display text-4xl">{profileName || user?.user_metadata?.full_name || "Cliente"}</h1>
-        <p className="text-muted-foreground mt-1">Acompanhe seus contratos, faturas e serviços contratados.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">Bem-vindo</div>
+          <h1 className="font-display text-4xl">{profile.name || user?.user_metadata?.full_name || "Cliente"}</h1>
+          <p className="text-muted-foreground mt-1">Acompanhe seus contratos, faturas e serviços contratados.</p>
+        </div>
+        {profile.cpanel_username && (
+          <Button onClick={handleCPanelLogin} disabled={cpanelLoading} className="sm:w-auto w-full">
+            {cpanelLoading ? "Acessando..." : "Acessar cPanel"} <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {overdueCount > 0 && (
