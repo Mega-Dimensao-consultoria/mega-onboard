@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 type Form = {
   pix_key_type: string;
@@ -35,6 +35,62 @@ export function BillingSettingsPanel() {
     whm_auto_suspend: false,
   });
   const [saving, setSaving] = useState(false);
+  const [testingWhm, setTestingWhm] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; details?: any } | null>(null);
+
+  const testWHM = async () => {
+    setTestingWhm(true);
+    setTestResult(null);
+    try {
+      // First save the current config to ensure we test what's in the inputs
+      const { error: saveErr } = await supabase
+        .from("brand_settings")
+        .update({
+          whm_config: {
+            host: f.whm_host,
+            user: f.whm_user,
+            api_token: f.whm_api_token,
+            port: f.whm_port,
+          } as any,
+        })
+        .eq("id", brand?.id);
+      
+      if (saveErr) throw new Error("Salve as configurações antes de testar.");
+
+      const { data, error } = await supabase.functions.invoke("whm-integration", {
+        body: { action: "test_connection", cpanel_user: f.whm_user }
+      });
+
+      if (error) throw error;
+
+      if (data?.ok && data.result?.connectivity) {
+        setTestResult({
+          success: true,
+          message: `Conectado ao WHM v${data.result.version}. Permissões verificadas com sucesso.`,
+          details: {
+            conectividade: data.result.connectivity,
+            permissoes: data.result.permissions_check,
+            carga_sistema: data.result.load_check
+          }
+        });
+        toast({ title: "Teste de conexão bem-sucedido!" });
+      } else {
+        throw new Error(data?.result?.raw?.version?.metadata?.reason || "Falha na autenticação ou servidor inacessível.");
+      }
+    } catch (e) {
+      setTestResult({
+        success: false,
+        message: e instanceof Error ? e.message : "Erro desconhecido ao testar conexão."
+      });
+      toast({ 
+        title: "Erro no teste", 
+        description: "Verifique os dados e tente novamente.",
+        variant: "destructive" 
+      });
+    } finally {
+      setTestingWhm(false);
+    }
+  };
 
   useEffect(() => {
     if (!brand) return;
