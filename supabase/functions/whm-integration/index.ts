@@ -37,19 +37,25 @@ Deno.serve(async (req) => {
     const isAuthorized = roleRow?.role === "consultor" || adminRow;
 
     const body = await req.json().catch(() => ({}));
-    const action = body?.action as "suspend" | "unsuspend" | "terminate" | "change_password" | "get_login_link";
+    const action = body?.action as string;
     const cpanelUser = body?.cpanel_user as string;
     
-    if (!cpanelUser) return json({ error: "cpanel_user required" }, 400);
+    if (!cpanelUser && action !== "get_server_status") {
+      return json({ error: "cpanel_user required" }, 400);
+    }
 
-    // If client is accessing their own login link, allow it
-    if (action === "get_login_link" && !isAuthorized) {
+    // Security check: if not authorized, user can only access their own cpanel data
+    if (!isAuthorized && action !== "get_server_status") {
        const { data: profile } = await admin.from("profiles").select("cpanel_username").eq("id", actorId).maybeSingle();
        if (profile?.cpanel_username !== cpanelUser) {
          return json({ error: "Forbidden" }, 403);
        }
-    } else if (!isAuthorized) {
-       return json({ error: "Forbidden" }, 403);
+       
+       // Restricted actions for clients
+       const allowedForClients = ["get_login_link", "get_stats", "list_emails", "add_email", "delete_email", "change_email_password", "get_ssl_status"];
+       if (!allowedForClients.includes(action)) {
+         return json({ error: "Action not allowed for clients" }, 403);
+       }
     }
 
     const { data: brand } = await admin.from("brand_settings").select("whm_config").maybeSingle();
@@ -60,35 +66,98 @@ Deno.serve(async (req) => {
     }
 
     const baseUrl = `https://${whm.host}:${whm.port || 2087}/json-api`;
-    const headers = {
-      "Authorization": `whm ${whm.user}:${whm.api_token}`,
+    const authString = `whm ${whm.user}:${whm.api_token}`;
+
+    const whmCall = async (functionName: string, params: Record<string, string>) => {
+      const qs = new URLSearchParams(params).toString();
+      const response = await fetch(`${baseUrl}/${functionName}?${qs}`, {
+        headers: { "Authorization": authString }
+      });
+      return await response.json();
     };
 
-    let endpoint = "";
-    const params = new URLSearchParams();
-    params.append("user", cpanelUser);
+    // Proxy for cPanel UAPI calls via WHM
+    const cpanelCall = async (module: string, func: string, params: Record<string, string> = {}) => {
+      const response = await fetch(`${baseUrl}/cpanel?cpanel_jsonapi_user=${cpanelUser}&cpanel_jsonapi_module=${module}&cpanel_jsonapi_func=${func}&cpanel_jsonapi_apiversion=3&${new URLSearchParams(params).toString()}`, {
+        headers: { "Authorization": authString }
+      });
+      return await response.json();
+    };
 
-    if (action === "suspend") {
-      endpoint = "suspendacct";
-      params.append("reason", "Suspended by Prospekta");
-    } else if (action === "unsuspend") {
-      endpoint = "unsuspendacct";
-    } else if (action === "terminate") {
-      endpoint = "removeacct";
-      params.append("username", cpanelUser);
-    } else if (action === "change_password") {
-      endpoint = "passwd";
-      if (!body.password) return json({ error: "password required" }, 400);
-      params.append("pass", body.password);
-    } else if (action === "get_login_link") {
-      endpoint = "create_temp_user_session";
-      params.append("app", "cpaneld");
-    } else {
-      return json({ error: "Invalid action" }, 400);
+    let result: any = null;
+
+    switch (action) {
+      case "suspend":
+        result = await whmCall("suspendacct", { user: cpanelUser, reason: "Suspended by Prospekta" });
+        break;
+      case "unsuspend":
+        result = await whmCall("unsuspendacct", { user: cpanelUser });
+        break;
+      case "terminate":
+        result = await whmCall("removeacct", { username: cpanelUser });
+        break;
+      case "change_password":
+        result = await whmCall("passwd", { user: cpanelUser, pass: body.password });
+        break;
+      case "get_login_link":
+        result = await whmCall("create_temp_user_session", { user: cpanelUser, app: "cpaneld" });
+        break;
+      case "get_stats": {
+        // Disk usage via WHM
+        const summary = await whmCall("accountsummary", { user: cpanelUser });
+        // Bandwidth usage via WHM
+        const bw = await whmCall("showbw", { search: cpanelUser, searchtype: "user" });
+        result = { summary, bandwidth: bw };
+        break;
+      }
+      case "list_emails":
+        result = await cpanelCall("Email", "list_pops");
+        break;
+      case "add_email":
+        result = await cpanelCall("Email", "add_pop", {
+          email: body.email_user,
+          password: body.email_password,
+          quota: body.quota || "0", // 0 is unlimited
+          domain: body.domain
+        });
+        break;
+      case "delete_email":
+        result = await cpanelCall("Email", "del_pop", {
+          email: body.email_user,
+          domain: body.domain
+        });
+        break;
+      case "change_email_password":
+        result = await cpanelCall("Email", "passwd_pop", {
+          email: body.email_user,
+          password: body.email_password,
+          domain: body.domain
+        });
+        break;
+      case "get_ssl_status":
+        result = await cpanelCall("SSL", "get_ssl_status");
+        break;
+      case "create_account": {
+        if (!isAuthorized) return json({ error: "Unauthorized" }, 403);
+        result = await whmCall("createacct", {
+          username: cpanelUser,
+          domain: body.domain,
+          plan: body.plan, // WHM Package name
+          contactemail: body.contact_email,
+          password: body.password || Math.random().toString(36).slice(-10) + "A1!"
+        });
+        break;
+      }
+      case "get_server_status": {
+        if (!isAuthorized) return json({ error: "Unauthorized" }, 403);
+        const load = await whmCall("get_server_load", {});
+        const info = await whmCall("get_server_information", {});
+        result = { load, info };
+        break;
+      }
+      default:
+        return json({ error: "Invalid action" }, 400);
     }
-
-    const response = await fetch(`${baseUrl}/${endpoint}?${params.toString()}`, { headers });
-    const result = await response.json();
 
     return json({ ok: true, result });
   } catch (e) {
