@@ -82,12 +82,14 @@ export default function Servicos() {
   useEffect(() => {
     if (!clientId) return;
     (async () => {
-      const [{ data: p }, { data: c }] = await Promise.all([
+      const [{ data: p }, { data: c }, { data: prof }] = await Promise.all([
         supabase.from("products").select("*").eq("active", true).in("type", ["service", "addon"]).order("sort_order"),
         supabase.from("contracts").select("id, status").eq("client_id", clientId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("profiles").select("cpanel_username").eq("id", clientId).maybeSingle(),
       ]);
       setProducts((p as Product[]) || []);
       setContract(c as Contract);
+      setProfile({ cpanel_username: (prof as any)?.cpanel_username || null });
       if (c) await loadItems((c as Contract).id);
       setLoading(false);
     })();
