@@ -34,8 +34,22 @@ Deno.serve(async (req) => {
     const { data: adminRow } = await admin
       .from("admins").select("user_id").eq("user_id", actorId).maybeSingle();
 
-    if (roleRow?.role !== "consultor" && !adminRow) {
-      return json({ error: "Forbidden" }, 403);
+    const isAuthorized = roleRow?.role === "consultor" || adminRow;
+
+    const body = await req.json().catch(() => ({}));
+    const action = body?.action as "suspend" | "unsuspend" | "terminate" | "change_password" | "get_login_link";
+    const cpanelUser = body?.cpanel_user as string;
+    
+    if (!cpanelUser) return json({ error: "cpanel_user required" }, 400);
+
+    // If client is accessing their own login link, allow it
+    if (action === "get_login_link" && !isAuthorized) {
+       const { data: profile } = await admin.from("profiles").select("cpanel_username").eq("id", actorId).maybeSingle();
+       if (profile?.cpanel_username !== cpanelUser) {
+         return json({ error: "Forbidden" }, 403);
+       }
+    } else if (!isAuthorized) {
+       return json({ error: "Forbidden" }, 403);
     }
 
     const { data: brand } = await admin.from("brand_settings").select("whm_config").maybeSingle();
@@ -44,12 +58,6 @@ Deno.serve(async (req) => {
     if (!whm || !whm.host || !whm.api_token || !whm.user) {
       return json({ error: "WHM not configured" }, 400);
     }
-
-    const body = await req.json().catch(() => ({}));
-    const action = body?.action as "suspend" | "unsuspend" | "terminate" | "change_password";
-    const cpanelUser = body?.cpanel_user as string;
-    
-    if (!cpanelUser) return json({ error: "cpanel_user required" }, 400);
 
     const baseUrl = `https://${whm.host}:${whm.port || 2087}/json-api`;
     const headers = {
@@ -72,6 +80,9 @@ Deno.serve(async (req) => {
       endpoint = "passwd";
       if (!body.password) return json({ error: "password required" }, 400);
       params.append("pass", body.password);
+    } else if (action === "get_login_link") {
+      endpoint = "create_temp_user_session";
+      params.append("app", "cpaneld");
     } else {
       return json({ error: "Invalid action" }, 400);
     }
