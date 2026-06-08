@@ -264,6 +264,17 @@ export default function Perfil() {
         </Card>
 
         <Card>
+          <CardHeader><CardTitle>Acesso cPanel</CardTitle></CardHeader>
+          <CardContent>
+            <div>
+              <Label>Usuário cPanel</Label>
+              <Input value={form.cpanel_username} disabled />
+              <p className="text-xs text-muted-foreground mt-1">Vinculado pelo consultor para automação de serviços.</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader><CardTitle>Endereço</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-3 gap-3">
