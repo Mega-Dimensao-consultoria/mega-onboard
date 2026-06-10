@@ -22,7 +22,7 @@ type Product = {
   price_cents: number;
   active: boolean;
   sort_order: number;
-  whm_package: string | null;
+  
 };
 
 const typeLabel = { plan: "Plano", service: "Serviço", addon: "Add-on", custom: "Customizado" };
@@ -36,7 +36,7 @@ const schema = z.object({
   price_cents: z.number().int().min(0),
 });
 
-const empty: Omit<Product, "id"> = { name: "", description: "", type: "plan", billing_cycle: "monthly", price_cents: 0, active: true, sort_order: 0, whm_package: "" };
+const empty: Omit<Product, "id"> = { name: "", description: "", type: "plan", billing_cycle: "monthly", price_cents: 0, active: true, sort_order: 0 };
 
 const fmt = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -86,7 +86,7 @@ export function CatalogPanel() {
       price_cents: parsed.data.price_cents,
       active: form.active,
       sort_order: form.sort_order,
-      whm_package: form.whm_package || null,
+      
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
@@ -170,11 +170,6 @@ export function CatalogPanel() {
                   <Label>Ordem</Label>
                   <Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })} />
                 </div>
-              </div>
-              <div>
-                <Label>Pacote WHM (Opcional)</Label>
-                <Input value={form.whm_package || ""} onChange={(e) => setForm({ ...form, whm_package: e.target.value })} placeholder="Ex: bronze_plan" />
-                <p className="text-[10px] text-muted-foreground mt-1">Nome exato do pacote no seu WHM para provisionamento automático.</p>
               </div>
               <div className="flex items-center gap-3">
                 <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
