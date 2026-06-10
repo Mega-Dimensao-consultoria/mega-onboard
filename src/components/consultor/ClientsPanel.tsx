@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { fmtDate, fmtMoney, contractStatusLabel, invoiceStatusLabel } from "@/lib/format";
-import { Users, Search, Eye, Mail, Phone, MapPin, FileText, Receipt, Building2, User as UserIcon, Hash, Calendar, Trash2, Shield, Lock, Unlock, LogOut } from "lucide-react";
+import { Users, Search, Eye, Mail, Phone, MapPin, FileText, Receipt, Building2, User as UserIcon, Hash, Calendar, Trash2 } from "lucide-react";
 import { startImpersonate } from "@/lib/impersonate";
 import { toast } from "@/hooks/use-toast";
 
@@ -54,8 +54,6 @@ export function ClientsPanel() {
 
   const openDetail = async (c: Client) => {
     setSelected(c);
-    setCpanelUserEdit((c as any).cpanel_username || "");
-    setCpanelDomainEdit((c as any).cpanel_domain || "");
     setDetailLoading(true);
     setContracts([]); setInvoices([]);
     const [{ data: cs }, { data: is }] = await Promise.all([
@@ -65,41 +63,6 @@ export function ClientsPanel() {
     setContracts((cs as ContractRow[]) || []);
     setInvoices((is as InvoiceRow[]) || []);
     setDetailLoading(false);
-  };
-
-  const updateCpanelUser = async () => {
-    if (!selected) return;
-    setWhmBusy(true);
-    try {
-      const { error } = await supabase.from("profiles").update({ 
-        cpanel_username: cpanelUserEdit || null,
-        cpanel_domain: cpanelDomainEdit || null
-      }).eq("id", selected.id);
-      if (error) throw error;
-      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, cpanel_username: cpanelUserEdit, cpanel_domain: cpanelDomainEdit } : c));
-      setSelected({ ...selected, cpanel_username: cpanelUserEdit, cpanel_domain: cpanelDomainEdit } as any);
-      toast({ title: "Dados cPanel atualizados" });
-    } catch (e) {
-      toast({ title: "Erro ao atualizar", description: e instanceof Error ? e.message : "", variant: "destructive" });
-    } finally {
-      setWhmBusy(false);
-    }
-  };
-
-  const whmAction = async (action: string) => {
-    if (!selected || !(selected as any).cpanel_username) return;
-    setWhmBusy(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("whm-integration", {
-        body: { action, cpanel_user: (selected as any).cpanel_username }
-      });
-      if (error) throw error;
-      toast({ title: "Comando enviado", description: `Ação ${action} processada pelo WHM.` });
-    } catch (e) {
-      toast({ title: "Erro WHM", description: e instanceof Error ? e.message : "", variant: "destructive" });
-    } finally {
-      setWhmBusy(false);
-    }
   };
 
   const impersonate = (c: Client) => {
@@ -241,7 +204,7 @@ export function ClientsPanel() {
                     {selected.nome_fantasia && <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Nome fantasia" value={selected.nome_fantasia} />}
                     {selected.razao_social && <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Razão social" value={selected.razao_social} />}
                     <Field icon={<Hash className="h-3.5 w-3.5" />} label={selected.doc_type === "cnpj" ? "CNPJ" : selected.doc_type === "cpf" ? "CPF" : "Documento"} value={selected.doc_number} />
-                    <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Usuário cPanel" value={(selected as any).cpanel_username} />
+                    
                     <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={selected.email} />
                     <Field icon={<Phone className="h-3.5 w-3.5" />} label="Telefone" value={selected.telefone} />
                     {selected.endereco && <Field icon={<MapPin className="h-3.5 w-3.5" />} label="Endereço" value={selected.endereco} />}
@@ -291,49 +254,15 @@ export function ClientsPanel() {
                     )}
                 </section>
 
-                {/* WHM / cPanel */}
-                <section className="space-y-3 pt-4 border-t border-border">
-                  <h3 className="font-display text-lg flex items-center gap-2">
-                    <Shield className="h-4 w-4" /> Gestão cPanel / WHM
-                  </h3>
-                  <div className="space-y-4 bg-secondary/20 rounded-xl p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] uppercase">Usuário cPanel</Label>
-                        <Input 
-                          value={cpanelUserEdit} 
-                          onChange={(e) => setCpanelUserEdit(e.target.value)} 
-                          placeholder="Ex: darthvader"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] uppercase">Domínio Principal</Label>
-                        <Input 
-                          value={cpanelDomainEdit} 
-                          onChange={(e) => setCpanelDomainEdit(e.target.value)} 
-                          placeholder="Ex: darth.com"
-                        />
-                      </div>
-                    </div>
-                    <Button className="w-full" size="sm" onClick={updateCpanelUser} disabled={whmBusy}>
-                      Salvar Dados de Acesso
-                    </Button>
-
-                    {(selected as any)?.cpanel_username && (
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-amber-600 border-amber-200 hover:bg-amber-50"
-                          onClick={() => whmAction("suspend")}
-                          disabled={whmBusy}
-                        >
-                          <Lock className="h-3.5 w-3.5 mr-1" /> Suspender
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-green-600 border-green-200 hover:bg-green-50"
+                <div className="pt-4 border-t border-border">
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => setConfirmDelete(selected)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" /> Excluir Cliente e Dados
+                  </Button>
+                </div>
                           onClick={() => whmAction("unsuspend")}
                           disabled={whmBusy}
                         >
