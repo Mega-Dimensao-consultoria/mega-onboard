@@ -37,9 +37,6 @@ export function ClientsPanel() {
   const [confirmDelete, setConfirmDelete] = useState<Client | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [whmBusy, setWhmBusy] = useState(false);
-  const [cpanelUserEdit, setCpanelUserEdit] = useState("");
-  const [cpanelDomainEdit, setCpanelDomainEdit] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -204,7 +201,6 @@ export function ClientsPanel() {
                     {selected.nome_fantasia && <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Nome fantasia" value={selected.nome_fantasia} />}
                     {selected.razao_social && <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Razão social" value={selected.razao_social} />}
                     <Field icon={<Hash className="h-3.5 w-3.5" />} label={selected.doc_type === "cnpj" ? "CNPJ" : selected.doc_type === "cpf" ? "CPF" : "Documento"} value={selected.doc_number} />
-                    
                     <Field icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={selected.email} />
                     <Field icon={<Phone className="h-3.5 w-3.5" />} label="Telefone" value={selected.telefone} />
                     {selected.endereco && <Field icon={<MapPin className="h-3.5 w-3.5" />} label="Endereço" value={selected.endereco} />}
@@ -252,85 +248,6 @@ export function ClientsPanel() {
                         ))}
                       </ul>
                     )}
-                </section>
-
-                <div className="pt-4 border-t border-border">
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={() => setConfirmDelete(selected)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" /> Excluir Cliente e Dados
-                  </Button>
-                </div>
-                          onClick={() => whmAction("unsuspend")}
-                          disabled={whmBusy}
-                        >
-                          <Unlock className="h-3.5 w-3.5 mr-1" /> Reativar
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm" 
-                          onClick={() => {
-                            if (confirm("Tem certeza que deseja ENCERRAR (Terminate) esta conta no cPanel? Esta ação é irreversível.")) {
-                              whmAction("terminate");
-                            }
-                          }}
-                          disabled={whmBusy}
-                        >
-                          <LogOut className="h-3.5 w-3.5 mr-1" /> Encerrar conta
-                        </Button>
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          onClick={async () => {
-                            const newPw = prompt("Digite a nova senha para a conta cPanel:");
-                            if (newPw) {
-                              setWhmBusy(true);
-                              try {
-                                const { data, error } = await supabase.functions.invoke("whm-integration", {
-                                  body: { action: "change_password", cpanel_user: (selected as any).cpanel_username, password: newPw }
-                                });
-                                if (error) throw error;
-                                toast({ title: "Senha alterada", description: "Senha do cPanel atualizada com sucesso." });
-                              } catch (e) {
-                                toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
-                              } finally {
-                                setWhmBusy(false);
-                              }
-                            }
-                          }}
-                          disabled={whmBusy}
-                        >
-                          Alterar senha
-                        </Button>
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          onClick={async () => {
-                            if (!confirm("Deseja forçar o provisionamento (criação de conta) no WHM para este cliente agora?")) return;
-                            setWhmBusy(true);
-                            try {
-                              const { data: inv } = await supabase.from("invoices").select("id").eq("client_id", selected.id).eq("status", "paid").limit(1).maybeSingle();
-                              if (!inv) throw new Error("Cliente precisa de pelo menos uma fatura paga para provisionar automaticamente.");
-                              const { data, error } = await supabase.functions.invoke("process-invoice-paid", {
-                                body: { invoice_id: inv.id }
-                              });
-                              if (error) throw error;
-                              toast({ title: "Comando enviado", description: "Processo de provisionamento iniciado." });
-                            } catch (e) {
-                              toast({ title: "Erro", description: e instanceof Error ? e.message : "", variant: "destructive" });
-                            } finally {
-                              setWhmBusy(false);
-                            }
-                          }}
-                          disabled={whmBusy}
-                        >
-                          Forçar Provisionamento
-                        </Button>
-                      </div>
-                    )}
-                  </div>
                 </section>
 
                 {/* Zona de perigo */}
@@ -403,23 +320,26 @@ export function ClientsPanel() {
   );
 }
 
-function Field({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | null | undefined }) {
+function SummaryStat({ icon, label, value, highlight = false }: { icon: React.ReactNode; label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="text-muted-foreground mt-0.5">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
-        <dd className="font-medium break-words">{value || "—"}</dd>
+    <div className={`p-3 rounded-xl border border-border/60 ${highlight ? "bg-destructive/5 border-destructive/20 text-destructive" : "bg-card"}`}>
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+        {icon} {label}
       </div>
+      <div className="font-display text-lg leading-tight">{value}</div>
     </div>
   );
 }
 
-function SummaryStat({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: string; highlight?: boolean }) {
+function Field({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | null }) {
+  if (!value) return null;
   return (
-    <div className={`rounded-xl border p-3 ${highlight ? "border-destructive/40 bg-destructive/5" : "border-border/60 bg-card"}`}>
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">{icon}{label}</div>
-      <div className={`font-display text-lg mt-1 ${highlight ? "text-destructive" : ""}`}>{value}</div>
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 text-muted-foreground">{icon}</div>
+      <div>
+        <dt className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none mb-0.5">{label}</dt>
+        <dd className="font-medium">{value}</dd>
+      </div>
     </div>
   );
 }
